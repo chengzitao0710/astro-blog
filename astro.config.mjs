@@ -5,7 +5,7 @@ import sitemap from '@astrojs/sitemap';
 
 // 站点地址（部署后改为实际域名，影响 RSS / sitemap 绝对链接）
 // Cloudflare Pages 部署后请在此处填入正式域名
-const SITE_URL = 'https://example.com';
+const SITE_URL = 'https://chengziblog.de5.net';
 
 // https://astro.build/config
 export default defineConfig({
