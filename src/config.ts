@@ -57,10 +57,10 @@ export const siteConfig = {
   ] as SocialLink[],
   // Giscus 评论配置（https://giscus.app 生成后填入）
   giscus: {
-    repo: '', // 形如 'owner/repo'
-    repoId: '',
+    repo: 'chengzitao0710/astro-blog', // 形如 'owner/repo'
+    repoId: 'R_kgDOTtK5_Q',
     category: 'Announcements',
-    categoryId: '',
+    categoryId: 'DIC_kwDOTtK5_c4DCnkt',
     mapping: 'pathname',
     reactionsEnabled: '1',
     emitMetadata: '0',
