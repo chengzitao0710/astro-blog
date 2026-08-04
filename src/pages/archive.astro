@@ -1,0 +1,127 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+
+// 按年分组
+const yearMap = new Map<number, typeof posts>();
+for (const post of posts) {
+  const year = post.data.date.getFullYear();
+  if (!yearMap.has(year)) yearMap.set(year, []);
+  yearMap.get(year)!.push(post);
+}
+const years = [...yearMap.keys()].sort((a, b) => b - a);
+
+const formatDate = (date: Date) => {
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${m}-${d}`;
+};
+---
+
+<BaseLayout title="归档" description="所有文章按时间归档">
+  <div class="archive-page">
+    <h1 class="page-title">归档</h1>
+    <p class="page-count">共 {posts.length} 篇文章</p>
+
+    <div class="archive-list">
+      {years.map((year) => (
+        <section class="year-section">
+          <h2 class="year-title">{year}</h2>
+          <div class="year-posts">
+            {yearMap.get(year)!.map((post) => (
+              <a href={`/posts/${post.id}/`} class="archive-item">
+                <span class="item-date">{formatDate(post.data.date)}</span>
+                <span class="item-title">{post.data.title}</span>
+                {post.data.pinned && <span class="item-pin">置顶</span>}
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .archive-page {
+    color: var(--text-primary);
+  }
+
+  .page-title {
+    font-size: 1.8em;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .page-count {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: 28px;
+  }
+
+  .year-section {
+    margin-bottom: 36px;
+  }
+
+  .year-title {
+    font-size: 1.3em;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .archive-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--border-secondary);
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: var(--bg-tertiary);
+      transform: translateX(2px);
+
+      .item-title {
+        color: var(--color-primary);
+      }
+    }
+
+    .item-date {
+      flex-shrink: 0;
+      width: 56px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .item-title {
+      flex: 1;
+      font-size: 15px;
+      color: var(--text-primary);
+      transition: color 0.2s ease;
+    }
+
+    .item-pin {
+      flex-shrink: 0;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 500;
+    }
+  }
+</style>

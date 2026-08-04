@@ -1,0 +1,435 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../config';
+import { getCollection } from 'astro:content';
+
+// 读取所有非草稿文章
+const allPosts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+
+// 置顶文章排前
+const posts = [...allPosts].sort(
+  (a, b) => Number(b.data.pinned) - Number(a.data.pinned)
+);
+
+// 首页只展示最新 7 篇
+const homePosts = posts.slice(0, 7);
+
+// 统计分类/标签
+const categoryMap = new Map<string, number>();
+const tagSet = new Set<string>();
+for (const post of allPosts) {
+  categoryMap.set(post.data.category, (categoryMap.get(post.data.category) || 0) + 1);
+  post.data.tags.forEach((t) => tagSet.add(t));
+}
+const categories = [...categoryMap.entries()].map(([name, count]) => ({ name, count }));
+const tags = [...tagSet];
+
+const siteInitial = (siteConfig.siteName || 'B').charAt(0).toUpperCase();
+
+const aboutIntro = (() => {
+  const desc = siteConfig.siteDescription || siteConfig.aboutContent || '';
+  const plain = desc.replace(/[#*`>\-\[\]()!]/g, '').replace(/\s+/g, ' ').trim();
+  return plain.length > 120 ? plain.slice(0, 120) + '…' : plain || '记录学习过程、项目实践，以及那些让我感兴趣的事物。';
+})();
+
+const formatDate = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+---
+
+<BaseLayout title={siteConfig.siteName} description={siteConfig.siteDescription} hideSidebar>
+  <div class="intro-home">
+    <!-- Hero：头像 + 站名 + 徽章 -->
+    <section class="profile-hero">
+      <div class="hero-avatar">
+        {siteConfig.authorAvatar ? (
+          <img src={siteConfig.authorAvatar} alt="作者头像" class="hero-avatar-img" />
+        ) : (
+          <span>{siteInitial}</span>
+        )}
+      </div>
+      <h1 class="hero-name">{siteConfig.siteName}</h1>
+      <div class="hero-badges">
+        <span class="badge-item">
+          <svg class="badge-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          {allPosts.length} 篇文章
+        </span>
+        <span class="badge-item">
+          <svg class="badge-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          {categories.length} 分类
+        </span>
+        <span class="badge-item">
+          <svg class="badge-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          {tags.length} 标签
+        </span>
+        {siteConfig.socialLinks.map((social) => (
+          <a href={social.url} target="_blank" rel="noopener" class="badge-item interactive">
+            <svg class="badge-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            {social.name}
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <div class="home-content">
+      <!-- 关于 -->
+      <section class="content-section">
+        <h2 class="section-label">关于</h2>
+        <div class="section-body">
+          <p class="about-text">{aboutIntro}</p>
+          <div class="more-row">
+            <a href="/about" class="more-link">
+              更多关于我
+              <span class="more-arrow">→</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 文章 -->
+      <section class="content-section">
+        <h2 class="section-label">文章</h2>
+        <div class="section-body">
+          <div class="feed-list">
+            {homePosts.map((post) => (
+              <a href={`/posts/${post.id}/`} class="feed-item">
+                <span class="feed-date">{formatDate(post.data.date)}</span>
+                <span class="feed-title">{post.data.title}</span>
+                {post.data.pinned && <span class="feed-pin">置顶</span>}
+                <span class="feed-chevron">→</span>
+              </a>
+            ))}
+          </div>
+          {allPosts.length === 0 && <p class="empty-text">暂无文章</p>}
+          {allPosts.length > homePosts.length && (
+            <div class="more-row">
+              <a href="/archive" class="more-link">
+                更多文章
+                <span class="more-arrow">→</span>
+              </a>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <!-- 分类 -->
+      {categories.length > 0 && (
+        <section class="content-section">
+          <h2 class="section-label">分类</h2>
+          <div class="section-body">
+            <div class="chip-list">
+              {categories.map((cat) => (
+                <a href={`/category/${encodeURIComponent(cat.name)}/`} class="chip">
+                  {cat.name}
+                  <span class="chip-count">{cat.count}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <!-- 标签 -->
+      {tags.length > 0 && (
+        <section class="content-section">
+          <h2 class="section-label">标签</h2>
+          <div class="section-body">
+            <div class="chip-list">
+              {tags.map((tag) => (
+                <a href={`/tag/${encodeURIComponent(tag)}/`} class="chip chip-tag">{tag}</a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .intro-home {
+    max-width: 100%;
+    margin: 0 auto;
+    color: var(--text-primary);
+  }
+
+  /* Hero */
+  .profile-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 20px 32px;
+
+    .hero-avatar {
+      display: grid;
+      place-items: center;
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      margin-bottom: 16px;
+      overflow: hidden;
+      color: var(--color-primary);
+      font-size: 32px;
+      font-weight: 500;
+      transition: transform 0.28s ease, box-shadow 0.28s ease;
+
+      &:hover {
+        transform: translateY(-2px) scale(1.04);
+      }
+
+      .hero-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+    }
+
+    .hero-name {
+      margin: 0;
+      font-size: 30px;
+      font-weight: 500;
+      line-height: 1.2;
+      color: var(--text-primary);
+      letter-spacing: 0.01em;
+    }
+
+    .hero-badges {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+
+      .badge-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 15px;
+        font-weight: 400;
+        color: var(--text-secondary);
+        background: transparent;
+        border: none;
+
+        .badge-icon {
+          font-size: 15px;
+          color: var(--text-tertiary);
+          opacity: 0.85;
+        }
+
+        &.interactive {
+          cursor: pointer;
+          text-decoration: none;
+          transition: color 0.2s ease;
+
+          &:hover {
+            color: var(--color-primary);
+
+            .badge-icon {
+              color: var(--color-primary);
+              opacity: 1;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .home-content {
+    max-width: 840px;
+    margin: 0 auto;
+
+    .content-section {
+      display: flex;
+      gap: 32px;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--border-secondary);
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .section-label {
+      flex-shrink: 0;
+      width: 90px;
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .section-body {
+      flex: 1;
+      min-width: 0;
+
+      .about-text {
+        font-size: 15px;
+        line-height: 1.7;
+        color: var(--text-secondary);
+        margin-bottom: 14px;
+      }
+
+      .more-row {
+        margin-top: 6px;
+      }
+
+      .more-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        color: var(--text-tertiary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: var(--color-primary);
+        }
+
+        .more-arrow {
+          transition: transform 0.2s ease;
+        }
+
+        &:hover .more-arrow {
+          transform: translateX(3px);
+        }
+      }
+
+      .empty-text {
+        color: var(--text-tertiary);
+        font-size: 14px;
+        padding: 20px 0;
+      }
+    }
+  }
+
+  /* 文章信息流 */
+  .feed-list {
+    display: flex;
+    flex-direction: column;
+
+    .feed-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 11px 4px;
+      border-bottom: 1px solid var(--border-secondary);
+      text-decoration: none;
+      transition: background 0.2s ease, transform 0.2s ease;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background: var(--bg-tertiary);
+        transform: translateX(2px);
+
+        .feed-title {
+          color: var(--color-primary);
+        }
+
+        .feed-chevron {
+          color: var(--color-primary);
+          transform: translateX(2px);
+        }
+      }
+
+      .feed-date {
+        flex-shrink: 0;
+        width: 86px;
+        font-size: 13px;
+        color: var(--text-tertiary);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .feed-title {
+        flex: 1;
+        min-width: 0;
+        font-size: 15px;
+        color: var(--text-primary);
+        transition: color 0.2s ease;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .feed-pin {
+        flex-shrink: 0;
+        padding: 2px 8px;
+        border-radius: var(--radius-pill);
+        background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 500;
+      }
+
+      .feed-chevron {
+        flex-shrink: 0;
+        color: var(--text-tertiary);
+        font-size: 14px;
+        transition: transform 0.2s ease, color 0.2s ease;
+      }
+    }
+  }
+
+  /* 分类/标签 chips */
+  .chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 13px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-primary);
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: var(--transition);
+
+      &:hover {
+        transform: translateY(-2px);
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+
+      .chip-count {
+        color: var(--text-tertiary);
+        font-size: 12px;
+      }
+    }
+  }
+
+  @media (max-width: 640px) {
+    .home-content .content-section {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .home-content .section-label {
+      width: auto;
+    }
+
+    .feed-list .feed-item .feed-date {
+      width: 72px;
+      font-size: 12px;
+    }
+  }
+</style>

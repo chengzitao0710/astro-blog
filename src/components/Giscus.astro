@@ -1,0 +1,80 @@
+---
+import { siteConfig } from '../config';
+
+// Giscus 评论（基于 GitHub Discussions）
+// 配置在 src/config.ts 的 giscus 字段，https://giscus.app 生成后填入
+const g = siteConfig.giscus;
+const isConfigured = g.repo && g.repoId && g.categoryId;
+---
+
+{isConfigured ? (
+  <script src="https://giscus.app/client.js"
+    data-repo={g.repo}
+    data-repo-id={g.repoId}
+    data-category={g.category}
+    data-category-id={g.categoryId}
+    data-mapping={g.mapping}
+    data-strict="0"
+    data-reactions-enabled={g.reactionsEnabled}
+    data-emit-metadata={g.emitMetadata}
+    data-input-position={g.inputPosition}
+    data-theme={g.theme}
+    data-lang={g.lang}
+    crossorigin="anonymous"
+    async
+  ></script>
+) : (
+  <div class="giscus-placeholder">
+    <p>评论系统未配置</p>
+    <p class="hint">请在 <code>src/config.ts</code> 的 <code>giscus</code> 字段填入 GitHub Discussions 配置</p>
+  </div>
+)}
+
+<style>
+  .giscus-placeholder {
+    text-align: center;
+    padding: 40px 20px;
+    border: 1px dashed var(--border-primary);
+    border-radius: var(--radius-medium);
+    color: var(--text-tertiary);
+
+    p {
+      margin: 4px 0;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    code {
+      padding: 2px 6px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+    }
+  }
+</style>
+
+<script>
+  // 同步暗色模式到 Giscus iframe
+  const syncGiscusTheme = () => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    if (iframe) {
+      iframe.contentWindow?.postMessage(
+        { giscus: { setConfig: { theme: isDark ? 'dark' : 'light' } } },
+        'https://giscus.app'
+      );
+    }
+  };
+
+  // 初始加载与主题切换时同步
+  const observer = new MutationObserver(syncGiscusTheme);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  // Giscus iframe 加载完成后同步一次
+  window.addEventListener('message', (e) => {
+    if (e.origin === 'https://giscus.app') syncGiscusTheme();
+  });
+</script>

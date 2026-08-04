@@ -1,0 +1,283 @@
+---
+import Header from '../components/Header.astro';
+import { siteConfig } from '../config';
+import '../styles/global.scss';
+
+interface Props {
+  title?: string;
+  description?: string;
+  // 是否隐藏侧边栏布局（文章详情、关于我等全宽页面）
+  hideSidebar?: boolean;
+}
+
+const {
+  title = siteConfig.siteName,
+  description = siteConfig.siteDescription,
+  hideSidebar = false,
+} = Astro.props;
+
+const fullTitle = title === siteConfig.siteName ? title : `${title} · ${siteConfig.siteName}`;
+const year = new Date().getFullYear();
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="keywords" content={siteConfig.siteKeywords} />
+    <meta name="author" content={siteConfig.siteAuthor} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{fullTitle}</title>
+
+    <!-- Satoshi 字体（ragnote.top 同款，来自 Fontshare） -->
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet" />
+
+    <!-- Caveat 手写字体（文章末尾签名使用） -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&display=swap" rel="stylesheet" />
+
+    <!-- 暗色模式：CSS 渲染前同步恢复，避免加载闪烁 -->
+    <script is:inline>
+      (() => {
+        try {
+          const saved = localStorage.getItem('theme');
+          const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div class="frontend-layout">
+      <!-- 背景层：纯色底 + 网格（带遮罩淡出） + 两角发光斑 -->
+      <div class="layout-bg" aria-hidden="true">
+        <div class="bg-solid"></div>
+        <div class="bg-glow bg-glow-1"></div>
+        <div class="bg-glow bg-glow-2"></div>
+        <div class="bg-grid"></div>
+      </div>
+
+      <Header />
+
+      <main class="layout-main">
+        <div class="main-inner" class:list={{ 'no-sidebar': hideSidebar }}>
+          <div class="content">
+            <slot />
+          </div>
+          <aside class="sidebar" id="layout-sidebar">
+            <slot name="sidebar">
+              <!-- 默认侧边栏由具体页面通过插槽覆盖 -->
+            </slot>
+          </aside>
+        </div>
+      </main>
+
+      <footer class="layout-footer">
+        <div class="footer-inner">
+          <p>© {year} {siteConfig.siteName} · {siteConfig.footerInfo}</p>
+          {siteConfig.recordNumber && <p class="record">{siteConfig.recordNumber}</p>}
+          <a href="/rss.xml" class="rss-link" title="RSS 订阅">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20A2.18 2.18 0 0 1 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1Z"/></svg>
+            RSS
+          </a>
+        </div>
+      </footer>
+    </div>
+
+    <style>
+      .frontend-layout {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        overflow-x: clip;
+        background: var(--page-solid);
+        color: var(--text-secondary);
+      }
+
+      /* 背景层 */
+      .layout-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+        contain: layout;
+
+        .bg-solid,
+        .bg-grid {
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+        }
+
+        .bg-solid {
+          background: var(--page-gradient);
+        }
+
+        .bg-glow {
+          position: absolute;
+          border-radius: 999px;
+          filter: blur(56px);
+          opacity: 0.22;
+        }
+
+        .bg-glow-1 {
+          top: -120px;
+          left: -80px;
+          width: 360px;
+          height: 360px;
+          background: var(--page-glow-1);
+        }
+
+        .bg-glow-2 {
+          top: 120px;
+          right: -120px;
+          width: 320px;
+          height: 320px;
+          background: var(--page-glow-2);
+        }
+
+        .bg-grid {
+          background-image:
+            linear-gradient(to right, var(--page-grid-color) 1px, transparent 1px),
+            linear-gradient(to bottom, var(--page-grid-color) 1px, transparent 1px);
+          background-size: 20px 20px;
+          opacity: 0.42;
+          -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.14) 72%, transparent 100%);
+          mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.14) 72%, transparent 100%);
+        }
+      }
+
+      /* 主体 */
+      .layout-main {
+        position: relative;
+        z-index: 1;
+        flex: 1 0 auto;
+        padding-top: 80px;
+
+        .main-inner {
+          max-width: var(--layout-max-width);
+          margin: 0 auto;
+          padding: 24px 32px;
+          display: flex;
+          gap: 32px;
+
+          &.no-sidebar {
+            .content {
+              max-width: var(--content-max-width);
+              margin: 0 auto;
+            }
+
+            .sidebar {
+              display: none;
+            }
+          }
+        }
+
+        .content {
+          flex: 1;
+          min-width: 0;
+          min-height: 60vh;
+        }
+
+        .sidebar {
+          width: var(--sidebar-width);
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+      }
+
+      /* 页脚 */
+      .layout-footer {
+        position: relative;
+        z-index: 1;
+        border-top: 1px solid var(--border-primary);
+
+        .footer-inner {
+          max-width: var(--layout-max-width);
+          margin: 0 auto;
+          padding: 20px 32px;
+          text-align: center;
+          color: var(--text-tertiary);
+          font-size: 13px;
+          line-height: 1.8;
+
+          .record {
+            margin-top: 4px;
+          }
+
+          .rss-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            color: var(--text-tertiary);
+            font-size: 12px;
+            text-decoration: none;
+            border: 1px solid var(--border-primary);
+            transition: all 0.2s ease;
+
+            &:hover {
+              color: var(--color-primary);
+              border-color: var(--color-primary);
+              transform: translateY(-1px);
+            }
+          }
+        }
+      }
+
+      @media (max-width: 768px) {
+        .layout-main .main-inner {
+          flex-direction: column;
+          padding: 20px 16px;
+          gap: 20px;
+        }
+
+        .layout-main .sidebar {
+          width: 100%;
+        }
+      }
+    </style>
+
+    <!-- Header 滚动方向感知：向下收起 / 向上出现 -->
+    <script>
+      const header = document.getElementById('layout-header');
+      if (header) {
+        let lastScrollY = 0;
+        const handleScroll = () => {
+          const currentY = window.scrollY;
+          if (currentY < 80) {
+            header.classList.remove('header-hidden');
+            lastScrollY = currentY;
+            return;
+          }
+          const delta = currentY - lastScrollY;
+          if (delta > 8) {
+            header.classList.add('header-hidden');
+          } else if (delta < -4) {
+            header.classList.remove('header-hidden');
+          }
+          lastScrollY = currentY;
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+      }
+    </script>
+  </body>
+</html>

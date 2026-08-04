@@ -1,0 +1,152 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="搜索" description="搜索文章">
+  <div class="search-page">
+    <h1 class="page-title">搜索</h1>
+    <p class="page-hint">输入关键词搜索全站文章内容</p>
+
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+      <input type="text" id="search-input" placeholder="搜索文章..." autocomplete="off" />
+    </div>
+
+    <div id="search-results" class="search-results"></div>
+  </div>
+</BaseLayout>
+
+<style>
+  .search-page {
+    color: var(--text-primary);
+  }
+
+  .page-title {
+    font-size: 1.8em;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .page-hint {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: 24px;
+  }
+
+  .search-box {
+    position: relative;
+    margin-bottom: 28px;
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-tertiary);
+      pointer-events: none;
+    }
+
+    input {
+      width: 100%;
+      height: 44px;
+      padding: 0 14px 0 42px;
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-medium);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s ease;
+
+      &::placeholder {
+        color: var(--text-placeholder);
+      }
+
+      &:focus {
+        border-color: var(--color-primary);
+      }
+    }
+  }
+
+  .search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    :global(.pagefind-ui__result) {
+      padding: 16px 18px;
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-medium);
+      background: var(--bg-card);
+      transition: var(--transition);
+
+      &:hover {
+        border-color: var(--border-hover);
+      }
+    }
+
+    :global(.pagefind-ui__result__title) {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+
+      a {
+        color: var(--text-primary);
+        text-decoration: none;
+
+        &:hover {
+          color: var(--color-primary);
+        }
+      }
+    }
+
+    :global(.pagefind-ui__result__excerpt) {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+  }
+</style>
+
+<link rel="stylesheet" href="/pagefind/pagefind-ui.css" />
+<script>
+  const initSearch = async () => {
+    const input = document.getElementById('search-input') as HTMLInputElement;
+    const results = document.getElementById('search-results');
+    if (!input || !results) return;
+
+    try {
+      // 用变量绕过 Vite 静态分析：Pagefind 索引在 build 后生成于 /pagefind/ 目录
+      const pagefindPath = '/pagefind/pagefind-ui.js';
+      const { search } = await import(/* @vite-ignore */ pagefindPath);
+      const ui = new search({
+        element: results,
+        showImages: false,
+        showSubResults: true,
+      });
+
+      input.addEventListener('input', (e) => {
+        const term = (e.target as HTMLInputElement).value;
+        ui.triggerSearch(term);
+      });
+    } catch (err) {
+      console.warn('Pagefind 索引尚未生成，请先运行 build', err);
+      results.innerHTML = '<p style="color: var(--text-tertiary); font-size: 14px;">搜索索引尚未生成。本地开发需先执行 <code>npm run build</code> 生成 Pagefind 索引。</p>';
+    }
+  };
+
+  // 从 URL 读取 ?q= 参数预填
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get('q');
+  if (q) {
+    const input = document.getElementById('search-input') as HTMLInputElement;
+    if (input) input.value = q;
+  }
+
+  initSearch();
+</script>

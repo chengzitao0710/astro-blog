@@ -1,0 +1,352 @@
+// ============================================
+// 全局样式与CSS变量
+// 设计语言：极简边框驱动 + 纯黑白渐变 + 网格发光背景 + Satoshi 字体
+// 从原 Vue 项目迁移，移除 Element Plus 相关变量（Astro 静态站不再使用）
+// ============================================
+
+// CSS变量定义（纯黑白渐变配色：浅色模式纯黑、暗色模式纯白，不要灰）
+:root {
+  // 主色（浅色模式：纯黑 #000000，黑白渐变风格，不要灰）
+  --color-primary: #000000;
+  --color-primary-dark: #000000;
+  --color-primary-light: #e5e7eb;
+  --primary-color: #000000;
+  --primary-light: #e5e7eb;
+  --primary-lightest: #f3f4f6;
+  --primary-dark: #000000;
+  --gradient-primary: linear-gradient(135deg, #000000 0%, #ffffff 100%);
+  // 强调色填充元素上的前景色（图标/文字）：纯黑按钮配白字
+  --accent-contrast: #ffffff;
+
+  // 文字（gray 系，对比度 ≥ 4.5:1）
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+  --text-placeholder: #9ca3af;
+  --text-disabled: #d1d5db;
+  --nav-text-color: #1f2937;
+
+  // 背景
+  --bg-primary: #ffffff;
+  --bg-color: #ffffff;
+  --bg-color-page: #fafafa;
+  --bg-color-card: #ffffff;
+  --bg-card: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+
+  // 边框（边框驱动设计的核心）
+  --border-primary: #e5e7eb;
+  --border-secondary: #f3f4f6;
+  --border-hover: #d1d5db;
+  --border-color: #e5e7eb;
+  --border-color-light: #f3f4f6;
+
+  // 页面背景系统（径向渐变极克制：左上角微偏灰，几乎感受不到）
+  --page-solid: #ffffff;
+  --page-gradient: radial-gradient(circle at 15% 12%, #f7f8fa 0%, var(--page-solid) 65%);
+  --page-grid-color: rgba(0, 0, 0, 0.03);
+  --page-glow-1: rgba(0, 0, 0, 0.035);
+  --page-glow-2: rgba(0, 0, 0, 0.025);
+
+  // 字体
+  --font-satoshi: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
+
+  // 圆角
+  --radius-sm: 6px;
+  --radius-small: 6px;
+  --radius: 8px;
+  --radius-medium: 12px;
+  --radius-large: 16px;
+  --radius-pill: 999px;
+
+  // 过渡（偏快、克制）
+  --transition: all 0.2s ease;
+  --transition-fast: all 0.16s ease;
+  --transition-smooth: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+
+  // 布局
+  --header-height: 64px;
+  --content-max-width: 840px;
+  --layout-max-width: 1280px;
+  --sidebar-width: 280px;
+
+  // 作者卡片专用黑白渐变（浅色模式：径向黑→白，中心黑保证字母对比）
+  --author-gradient: radial-gradient(circle, #000000 0%, #ffffff 100%);
+  --author-fg: #ffffff;
+  --author-border: #000000;
+}
+
+// 暗色主题变量（html[data-theme=dark]，纯白主色，黑白渐变反转）
+html[data-theme='dark'] {
+  // 主色（暗色模式：纯白 #ffffff，黑白渐变反转，不要灰）
+  --color-primary: #ffffff;
+  --color-primary-dark: #ffffff;
+  --color-primary-light: rgba(255, 255, 255, 0.14);
+  --primary-color: #ffffff;
+  --primary-light: rgba(255, 255, 255, 0.14);
+  --primary-lightest: rgba(255, 255, 255, 0.08);
+  --primary-dark: #ffffff;
+  --gradient-primary: linear-gradient(135deg, #ffffff 0%, #000000 100%);
+  // 强调色填充元素前景：纯白按钮配黑字
+  --accent-contrast: #000000;
+
+  --text-primary: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-muted: #6b7280;
+  --text-placeholder: #6b7280;
+  --text-disabled: #4b5563;
+  --nav-text-color: #fafafa;
+
+  --bg-primary: #0a0a0a;
+  --bg-color: #0a0a0a;
+  --bg-color-page: #111111;
+  --bg-color-card: #181818;
+  --bg-card: #181818;
+  --bg-secondary: #141414;
+  --bg-tertiary: #1f1f1f;
+
+  --border-primary: #27272a;
+  --border-secondary: #1f1f1f;
+  --border-hover: #3f3f46;
+  --border-color: #27272a;
+  --border-color-light: #1f1f1f;
+
+  --page-solid: #0a0a0a;
+  // 暗色模式径向渐变极克制：左上角微亮，几乎感受不到
+  --page-gradient: radial-gradient(circle at 15% 12%, #131313 0%, var(--page-solid) 65%);
+  --page-grid-color: rgba(255, 255, 255, 0.03);
+  --page-glow-1: rgba(255, 255, 255, 0.035);
+  --page-glow-2: rgba(255, 255, 255, 0.025);
+
+  // 作者卡片专用黑白渐变（暗色模式：径向白→黑，中心白保证字母对比）
+  --author-gradient: radial-gradient(circle, #ffffff 0%, #000000 100%);
+  --author-fg: #000000;
+  --author-border: #ffffff;
+}
+
+// 全局重置
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: var(--font-satoshi);
+  font-size: 15px;
+  color: var(--text-secondary);
+  background-color: var(--page-solid);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--color-primary-dark);
+  }
+}
+
+// 滚动条样式（简约细条）
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 3px;
+
+  &:hover {
+    background: var(--text-tertiary);
+  }
+}
+
+// 通用工具类
+.container {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+
+// 卡片：边框驱动
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-medium);
+  padding: 24px;
+  transition: transform 0.22s ease, border-color 0.22s ease, background-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+// 边框驱动 hover 工具类
+.card-hover {
+  transition: var(--transition);
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+    background: var(--bg-card);
+  }
+}
+
+// 药丸按钮工具类
+.pill {
+  border-radius: var(--radius-pill);
+}
+
+// Markdown 渲染样式（无标题下划线、引用四周边框、16px 正文、链接下划线）
+.markdown-body {
+  line-height: 1.8;
+  font-size: 16px;
+  color: var(--text-secondary);
+  word-wrap: break-word;
+
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 28px;
+    margin-bottom: 12px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--text-primary);
+    // 目录点击/锚点定位时，为固定顶部导航栏预留空间
+    scroll-margin-top: 80px;
+  }
+
+  // 标题不加下划线，靠字号与字重区分层级
+  h1 { font-size: 1.7em; }
+  h2 { font-size: 1.4em; }
+  h3 { font-size: 1.2em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; }
+
+  p {
+    margin-bottom: 16px;
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.2s ease;
+
+    &:hover {
+      text-decoration-color: var(--color-primary);
+    }
+  }
+
+  code {
+    padding: 2px 6px;
+    background: var(--bg-tertiary);
+    color: var(--color-primary-dark);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+  }
+
+  // shiki 代码块：astro 自动给 pre 包裹 astro-code 类
+  pre,
+  .astro-code {
+    padding: 16px 20px;
+    background: var(--bg-tertiary) !important;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    margin-bottom: 16px;
+    position: relative;
+
+    code {
+      padding: 0;
+      background: transparent;
+      color: var(--text-primary);
+    }
+  }
+
+  // 引用块四周边框（非左侧粗边）
+  blockquote {
+    padding: 14px 22px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius);
+    background: transparent;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+
+    th, td {
+      padding: 10px 14px;
+      border: 1px solid var(--border-primary);
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+  }
+
+  ul, ol {
+    padding-left: 1.6em;
+    margin-bottom: 16px;
+
+    li {
+      margin-bottom: 6px;
+    }
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-medium);
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border-primary);
+    margin: 28px 0;
+  }
+}
+
+// 页面加载淡入动画（替代 ClientRouter 的页面过渡效果）
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.layout-main .content {
+  animation: page-enter 0.45s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layout-main .content {
+    animation: none;
+  }
+}

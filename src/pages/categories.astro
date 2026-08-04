@@ -1,0 +1,198 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime()
+);
+
+// 按分类聚合
+const categoryMap = new Map<string, typeof posts>();
+for (const post of posts) {
+  const cat = post.data.category;
+  if (!categoryMap.has(cat)) categoryMap.set(cat, []);
+  categoryMap.get(cat)!.push(post);
+}
+
+// 按文章数降序排列
+const categories = [...categoryMap.entries()]
+  .map(([name, catPosts]) => ({
+    name,
+    count: catPosts.length,
+    latest: catPosts[0], // 最近一篇
+  }))
+  .sort((a, b) => b.count - a.count);
+
+const totalPosts = posts.length;
+---
+
+<BaseLayout title="分类" description="所有文章分类总览">
+  <div class="categories-page">
+    <h1 class="page-title">分类</h1>
+    <p class="page-count">共 {categories.length} 个分类，{totalPosts} 篇文章</p>
+
+    <div class="category-grid">
+      {categories.map((cat) => (
+        <a href={`/category/${encodeURIComponent(cat.name)}/`} class="category-card">
+          <div class="card-header">
+            <h2 class="card-name">{cat.name}</h2>
+            <span class="card-count">{cat.count}</span>
+          </div>
+          {cat.latest && (
+            <p class="card-latest">
+              <span class="latest-label">最新</span>
+              <span class="latest-title">{cat.latest.data.title}</span>
+            </p>
+          )}
+          <div class="card-bar">
+            <div
+              class="card-bar-fill"
+              style={`width: ${Math.round((cat.count / totalPosts) * 100)}%`}
+            ></div>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    {categories.length === 0 && <p class="empty-text">暂无分类，请先添加文章</p>}
+  </div>
+</BaseLayout>
+
+<style>
+  .categories-page {
+    color: var(--text-primary);
+  }
+
+  .page-title {
+    font-size: 1.8em;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .page-count {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-bottom: 28px;
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .category-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-medium);
+    text-decoration: none;
+    transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+
+    &:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+
+      .card-name {
+        color: var(--color-primary);
+      }
+
+      .card-count {
+        background: var(--color-primary);
+        color: var(--accent-contrast);
+      }
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-name {
+      font-size: 1.15em;
+      font-weight: 500;
+      color: var(--text-primary);
+      transition: color 0.2s ease;
+    }
+
+    .card-count {
+      flex-shrink: 0;
+      min-width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-primary);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .card-latest {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+      line-height: 1.4;
+      min-width: 0;
+
+      .latest-label {
+        flex-shrink: 0;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: var(--bg-tertiary);
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .latest-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .card-bar {
+      height: 3px;
+      border-radius: 2px;
+      background: var(--border-secondary);
+      overflow: hidden;
+
+      .card-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: var(--color-primary);
+        transition: width 0.4s ease;
+        min-width: 4px;
+      }
+    }
+  }
+
+  .empty-text {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    padding: 40px 0;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .category-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+  }
+</style>
