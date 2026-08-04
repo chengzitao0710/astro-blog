@@ -89,14 +89,16 @@ const cover = typeof post.data.cover === 'string' ? post.data.cover : post.data.
       )}
     </div>
 
-    <!-- 标签 -->
-    {post.data.tags.length > 0 && (
-      <div class="article-tags">
-        {post.data.tags.map((tag) => (
-          <a href={`/tag/${encodeURIComponent(tag)}/`} class="tag-chip">#{tag}</a>
-        ))}
-      </div>
-    )}
+    <!-- 标签 + 评论按钮 -->
+    <div class="article-tags">
+      {post.data.tags.map((tag) => (
+        <a href={`/tag/${encodeURIComponent(tag)}/`} class="tag-chip">#{tag}</a>
+      ))}
+      <a href="#comments" class="tag-chip comment-chip" aria-label="评论">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        评论
+      </a>
+    </div>
 
     <!-- 个性签名（参照 ragnote.top endcard-signature 实现：SVG path stroke-dasharray 描边绘制动画） -->
     <div class="signature-card" id="signature-card">
@@ -139,14 +141,11 @@ const cover = typeof post.data.cover === 'string' ? post.data.cover : post.data.
     </section>
   </article>
 
-  <!-- 返回顶部 + 评论浮动按钮 -->
+  <!-- 返回顶部浮动按钮 -->
   <div class="float-btn-group">
     <button class="float-btn float-top" id="float-top" aria-label="返回顶部">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
     </button>
-    <a href="#comments" class="float-btn float-comment" aria-label="评论">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    </a>
   </div>
 </BaseLayout>
 
@@ -532,14 +531,15 @@ const cover = typeof post.data.cover === 'string' ? post.data.cover : post.data.
   .comments-section {
     margin-top: 48px;
     padding-top: 32px;
+    padding-right: 60px;
     border-top: 1px solid var(--border-secondary);
     scroll-margin-top: 80px;
   }
 
-  /* 浮动按钮 */
+  /* 浮动按钮组（返回顶部，右下角） */
   .float-btn-group {
     position: fixed;
-    right: 16px;
+    right: 8px;
     bottom: 24px;
     display: flex;
     flex-direction: column;
@@ -578,11 +578,11 @@ const cover = typeof post.data.cover === 'string' ? post.data.cover : post.data.
     transform: translateY(0);
   }
 
-  /* 评论按钮始终可见 */
-  .float-comment {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
+  /* 评论按钮（标签栏末尾） */
+  .comment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
 
   @media (max-width: 1024px) {
