@@ -7,11 +7,11 @@ const path = Astro.url.pathname;
 const isActive = (p: string) => (p === '/' ? path === '/' : path.startsWith(p));
 
 const navItems = [
-  { path: '/', label: '首页' },
-  { path: '/articles', label: '文章' },
-  { path: '/categories', label: '分类' },
-  { path: '/archive', label: '归档' },
-  { path: '/about', label: '关于我' },
+  { path: '/', label: 'Home' },
+  { path: '/articles', label: 'Articles' },
+  { path: '/categories', label: 'Categories' },
+  { path: '/archive', label: 'Archive' },
+  { path: '/about', label: 'About' },
 ];
 ---
 
@@ -42,8 +42,8 @@ const navItems = [
           type="text"
           name="q"
           class="search-input"
-          placeholder="搜索文章..."
-          aria-label="搜索文章"
+          placeholder="Search articles..."
+          aria-label="Search articles"
         />
       </form>
       <ThemeToggle />
