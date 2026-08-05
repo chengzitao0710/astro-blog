@@ -20,9 +20,9 @@ export const siteConfig = {
   // 站点作者
   siteAuthor: 'chengzi',
   // 作者头像（首页 Hero + 关于我；填图床外链或本地 /avatars/xxx.png）
-  authorAvatar: 'https://76f2f781.cloudflare-imgbed-6ja.pages.dev/file/1785811146811_和装-125553302_1_.png',
+  authorAvatar: 'https://76f2f781.cloudflare-imgbed-6ja.pages.dev/file/blog/1785811146811_和装-125553302_1_.png',
   // 站点 Logo（导航栏品牌徽章；空则显示默认图标）
-  siteLogo: 'https://76f2f781.cloudflare-imgbed-6ja.pages.dev/file/1785811184486_eee94d9fe9c4c9ceb3c61b0c5c616923.jpg',
+  siteLogo: 'https://76f2f781.cloudflare-imgbed-6ja.pages.dev/file/blog/1785811184486_eee94d9fe9c4c9ceb3c61b0c5c616923.jpg',
   // 站点简介（SEO meta description）
   siteDescription: '记录技术学习与生活思考的个人博客',
   // 站点关键词（SEO meta keywords）
