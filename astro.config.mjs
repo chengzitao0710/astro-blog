@@ -2,6 +2,8 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 // 站点地址（部署后改为实际域名，影响 RSS / sitemap 绝对链接）
 // Cloudflare Pages 部署后请在此处填入正式域名
@@ -20,6 +22,8 @@ export default defineConfig({
       },
       wrap: true,
     },
+    remarkPlugins: [remarkMath],
+    rehypePlugins: [rehypeKatex],
   },
   build: {
     // 内联小于 4KB 的样式，减少首屏请求

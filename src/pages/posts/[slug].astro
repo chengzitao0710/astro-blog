@@ -17,8 +17,8 @@ type Props = { post: CollectionEntry<'posts'> };
 const { post } = Astro.props;
 const { Content, headings } = await render(post);
 
-// 过滤 h2/h3/h4 作为 TOC
-const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 4);
+// 过滤 h1-h4 作为 TOC（文章用 # 做章节标题，需纳入目录）
+const toc = headings.filter((h) => h.depth >= 1 && h.depth <= 4);
 
 // 上下篇：按日期排序
 const allPosts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
@@ -294,13 +294,25 @@ const cover = typeof post.data.cover === 'string' ? post.data.cover : post.data.
         background: color-mix(in srgb, var(--color-primary) 6%, transparent);
       }
 
-      &.toc-h3 {
+      &.toc-h1 {
+        font-weight: 500;
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      &.toc-h2 {
         padding-left: 22px;
         font-size: 12px;
       }
 
-      &.toc-h4 {
+      &.toc-h3 {
         padding-left: 34px;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      &.toc-h4 {
+        padding-left: 46px;
         font-size: 12px;
         color: var(--text-muted);
       }
