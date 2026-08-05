@@ -2,8 +2,11 @@
 title: 用 Astro 重建博客：从动态到静态
 date: 2026-08-03
 category: 技术
-tags: [Astro, 博客, 静态站点]
-cover: https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200
+tags:
+  - Astro
+  - 博客
+  - 静态站点
+cover: https://76f2f781.cloudflare-imgbed-6ja.pages.dev/file/blog/1785923382206_【哲风壁纸】插画-漫威-漫威宇宙.png
 summary: 从 Vue + Python 后端迁移到 Astro 静态站，舍弃后端与登录系统，用 Content Collections 管理 Markdown 内容，部署到 Cloudflare Pages。
 pinned: true
 draft: false
