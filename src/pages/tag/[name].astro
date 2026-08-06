@@ -21,7 +21,7 @@ export async function getStaticPaths() {
 const { tag, posts } = Astro.props;
 ---
 
-<BaseLayout title={`标签：${tag}`} description={`标签「${tag}」下的所有文章`}>
+<BaseLayout title={`标签：${tag}`} description={`标签「${tag}」下的所有文章`} wideContent>
   <div class="list-page">
     <div class="page-header">
       <a href="/articles" class="back-link">← 全部文章</a>
@@ -84,7 +84,7 @@ const { tag, posts } = Astro.props;
 
   .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 20px;
   }
 
@@ -93,6 +93,12 @@ const { tag, posts } = Astro.props;
     font-size: 14px;
     padding: 40px 0;
     text-align: center;
+  }
+
+  @media (max-width: 1024px) {
+    .card-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
   @media (max-width: 640px) {
