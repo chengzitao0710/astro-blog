@@ -54,6 +54,7 @@ export const siteConfig = {
   // 社交链接（关于我页面联系方式卡片）
   socialLinks: [
     { name: 'GitHub', url: 'https://github.com/chengzitao0710' },
+    { name: 'CSDN', url: 'https://blog.csdn.net/cz0710?type=blog'}
   ] as SocialLink[],
   // Giscus 评论配置（https://giscus.app 生成后填入）
   giscus: {
