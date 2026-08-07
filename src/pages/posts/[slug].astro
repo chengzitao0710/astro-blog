@@ -67,6 +67,13 @@ const cover = typeof post.data.cover === 'string' ? post.data.cover : post.data.
     <div class="article-body-wrapper">
       <div class="article-content markdown-body" id="article-body" data-pagefind-body>
         <Content />
+        <!-- Pagefind 索引补充：标题、摘要、分类、标签（隐藏，仅供搜索索引） -->
+        <div class="pagefind-index-meta" aria-hidden="true" hidden>
+          <h1>{post.data.title}</h1>
+          {post.data.summary && <p>{post.data.summary}</p>}
+          <p>分类：{post.data.category}</p>
+          <p>标签：{post.data.tags.join(' ')}</p>
+        </div>
       </div>
 
       {toc.length > 0 && (
