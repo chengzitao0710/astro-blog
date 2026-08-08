@@ -1,10 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
+import { formatShortDate } from '../utils/date';
+import { getPostsByDate } from '../utils/posts';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime()
-);
+const posts = await getPostsByDate();
 
 // 按年分组
 const yearMap = new Map<number, typeof posts>();
@@ -14,12 +13,6 @@ for (const post of posts) {
   yearMap.get(year)!.push(post);
 }
 const years = [...yearMap.keys()].sort((a, b) => b - a);
-
-const formatDate = (date: Date) => {
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${m}-${d}`;
-};
 ---
 
 <BaseLayout title="归档" description="所有文章按时间归档">
@@ -29,16 +22,26 @@ const formatDate = (date: Date) => {
 
     <div class="archive-list">
       {years.map((year) => (
-        <section class="year-section">
-          <h2 class="year-title">{year}</h2>
+        <section class="year-section" data-year={year}>
+          <button class="year-title" type="button" aria-expanded="true">
+            <svg class="year-chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="year-label">{year}</span>
+            <span class="year-count">{yearMap.get(year)!.length} 篇</span>
+          </button>
           <div class="year-posts">
-            {yearMap.get(year)!.map((post) => (
-              <a href={`/posts/${post.id}/`} class="archive-item">
-                <span class="item-date">{formatDate(post.data.date)}</span>
-                <span class="item-title">{post.data.title}</span>
-                {post.data.pinned && <span class="item-pin">置顶</span>}
-              </a>
-            ))}
+            <div class="year-posts-inner">
+              {yearMap.get(year)!.map((post) => (
+                <a href={`/posts/${post.id}/`} class="archive-item">
+                  <span class="item-dot"></span>
+                  <span class="item-date">{formatShortDate(post.data.date)}</span>
+                  <span class="item-title">{post.data.title}</span>
+                  {post.data.category && post.data.category !== '未分类' && (
+                    <span class="item-category">{post.data.category}</span>
+                  )}
+                  {post.data.pinned && <span class="item-pin">置顶</span>}
+                </a>
+              ))}
+            </div>
           </div>
         </section>
       ))}
@@ -64,24 +67,99 @@ const formatDate = (date: Date) => {
     margin-bottom: 28px;
   }
 
-  .year-section {
-    margin-bottom: 36px;
-  }
-
+  /* ---- 年份标题（sticky 吸顶 + 可点击折叠） ---- */
   .year-title {
+    position: sticky;
+    top: 70px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
     font-size: 1.3em;
     font-weight: 500;
     color: var(--text-primary);
-    margin-bottom: 14px;
-    padding-bottom: 8px;
+    margin-bottom: 6px;
+    padding: 10px 12px;
+    border: none;
     border-bottom: 1px solid var(--border-primary);
+    background: var(--page-solid);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--color-primary);
+    }
   }
 
+  .year-chevron {
+    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.5;
+  }
+
+  /* 折叠状态：箭头旋转 */
+  .year-section.collapsed .year-chevron {
+    transform: rotate(-90deg);
+  }
+
+  .year-label {
+    margin-left: 2px;
+  }
+
+  /* 年份统计 */
+  .year-count {
+    font-size: 0.7em;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    margin-left: 4px;
+  }
+
+  /* ---- 时间线容器 ---- */
+  .year-posts {
+    /* 折叠动画：grid-template-rows 1fr → 0fr */
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .year-posts-inner {
+    overflow: hidden;
+    min-height: 0;
+    /* 左侧竖线留出空间 */
+    position: relative;
+    padding-left: 32px;
+  }
+
+  /* 折叠状态：收起内容 */
+  .year-section.collapsed .year-posts {
+    grid-template-rows: 0fr;
+  }
+
+  /* 垂直时间线（伪元素） */
+  .year-posts-inner::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 0;
+    bottom: 8px;
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      var(--border-primary) 0%,
+      var(--border-secondary) 100%
+    );
+  }
+
+  /* ---- 每篇文章行 ---- */
   .archive-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 10px 4px;
+    padding: 11px 4px;
     border-bottom: 1px solid var(--border-secondary);
     text-decoration: none;
     transition: background 0.2s ease, transform 0.2s ease;
@@ -92,11 +170,33 @@ const formatDate = (date: Date) => {
 
     &:hover {
       background: var(--bg-tertiary);
-      transform: translateX(2px);
+      transform: translateX(3px);
 
       .item-title {
         color: var(--color-primary);
       }
+
+      /* 悬停时圆点放大 + 变色 */
+      .item-dot {
+        transform: translate(-50%, -50%) scale(1.4);
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+      }
+    }
+
+    /* 时间线圆点 */
+    .item-dot {
+      position: absolute;
+      left: -25px;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid var(--border-hover);
+      z-index: 1;
+      transition: all 0.25s ease;
     }
 
     .item-date {
@@ -112,8 +212,30 @@ const formatDate = (date: Date) => {
       font-size: 15px;
       color: var(--text-primary);
       transition: color 0.2s ease;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
+    /* 分类标签 */
+    .item-category {
+      flex-shrink: 0;
+      padding: 2px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-primary);
+      color: var(--text-tertiary);
+      font-size: 11px;
+      font-weight: 500;
+      transition: border-color 0.2s ease, color 0.2s ease;
+    }
+
+    &:hover .item-category {
+      border-color: var(--border-hover);
+      color: var(--text-secondary);
+    }
+
+    /* 置顶标签 */
     .item-pin {
       flex-shrink: 0;
       padding: 2px 8px;
@@ -124,4 +246,82 @@ const formatDate = (date: Date) => {
       font-weight: 500;
     }
   }
+
+  /* ---- 暗色模式微调 ---- */
+  html[data-theme='dark'] & {
+    .year-title {
+      background: var(--page-solid);
+    }
+  }
+
+  /* ---- 移动端适配 ---- */
+  @media (max-width: 640px) {
+    .archive-item {
+      gap: 10px;
+    }
+
+    .item-category {
+      display: none;
+    }
+
+    .year-posts-inner {
+      padding-left: 28px;
+    }
+
+    .archive-item .item-dot {
+      left: -21px;
+    }
+  }
 </style>
+
+<script>
+  function initArchiveToggle() {
+    var sections = document.querySelectorAll('.year-section');
+    if (!sections.length) return;
+
+    // 读取已折叠的年份
+    var collapsedYears;
+    try {
+      collapsedYears = new Set(JSON.parse(localStorage.getItem('archive-collapsed') || '[]'));
+    } catch (e) {
+      collapsedYears = new Set();
+    }
+
+    sections.forEach(function (section) {
+      var year = section.getAttribute('data-year');
+      var btn = section.querySelector('.year-title');
+      if (!btn || !year) return;
+
+      // 恢复折叠状态
+      if (collapsedYears.has(year)) {
+        section.classList.add('collapsed');
+        btn.setAttribute('aria-expanded', 'false');
+      } else {
+        section.classList.remove('collapsed');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+
+      // 绑定点击（cloneNode 防重复绑定）
+      var newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+
+      newBtn.addEventListener('click', function () {
+        var isCollapsed = section.classList.toggle('collapsed');
+        newBtn.setAttribute('aria-expanded', String(!isCollapsed));
+
+        try {
+          var stored = JSON.parse(localStorage.getItem('archive-collapsed') || '[]');
+          var set = new Set(stored);
+          if (isCollapsed) {
+            set.add(year);
+          } else {
+            set.delete(year);
+          }
+          localStorage.setItem('archive-collapsed', JSON.stringify([...set]));
+        } catch (e) {}
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initArchiveToggle);
+</script>

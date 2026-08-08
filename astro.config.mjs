@@ -5,14 +5,14 @@ import sitemap from '@astrojs/sitemap';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
-// 站点地址（部署后改为实际域名，影响 RSS / sitemap 绝对链接）
-// Cloudflare Pages 部署后请在此处填入正式域名
-const SITE_URL = 'https://chengziblog.de5.net';
+// 站点地址：优先从环境变量读取，适配多环境部署（本地 dev / 预览 / 生产）
+const SITE_URL = process.env.SITE_URL || 'https://chengziblog.de5.net';
 
 // https://astro.build/config
 export default defineConfig({
   site: SITE_URL,
   integrations: [mdx(), sitemap()],
+  prefetch: true,
   markdown: {
     // 代码块语法高亮使用 shiki，主题与原 highlight.js 风格接近
     shikiConfig: {

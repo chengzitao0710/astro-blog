@@ -56,7 +56,14 @@ export const siteConfig = {
     { name: 'GitHub', url: 'https://github.com/chengzitao0710' },
     { name: 'CSDN', url: 'https://blog.csdn.net/cz0710?type=blog'}
   ] as SocialLink[],
-  // Giscus 评论配置（https://giscus.app 生成后填入）
+  // 站点 OG 默认图（社交分享预览，无封面时使用；填图床外链或本地路径）
+  ogDefaultImage: '',
+  // 网站分析（留空则不启用；填 Umami/GA/Plausible 的 script src 和 siteId）
+  analytics: {
+    // Umami 示例：src='https://your-umami.com/script.js' websiteId='xxx-xxx'
+    src: '',
+    websiteId: '',
+  },
   giscus: {
     repo: 'chengzitao0710/astro-blog', // 形如 'owner/repo'
     repoId: 'R_kgDOTtK5_Q',

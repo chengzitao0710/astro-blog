@@ -1,12 +1,10 @@
 import rss from '@astrojs/rss';
 import type { APIContext } from 'astro';
-import { getCollection } from 'astro:content';
 import { siteConfig } from '../config';
+import { getPostsByDate } from '../utils/posts';
 
 export async function GET(context: APIContext) {
-  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-    (a, b) => b.data.date.getTime() - a.data.date.getTime()
-  );
+  const posts = await getPostsByDate();
 
   return rss({
     title: siteConfig.siteName,

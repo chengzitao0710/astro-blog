@@ -2,7 +2,6 @@
 import ThemeToggle from './ThemeToggle.astro';
 import { siteConfig } from '../config';
 
-// 当前路径用于高亮导航项
 const path = Astro.url.pathname;
 const isActive = (p: string) => (p === '/' ? path === '/' : path.startsWith(p));
 
@@ -20,7 +19,14 @@ const navItems = [
     <a href="/" class="brand">
       <span class="brand-badge">
         {siteConfig.siteLogo ? (
-          <img src={siteConfig.siteLogo} class="brand-logo-img" alt="logo" />
+          <>
+            <img src={siteConfig.siteLogo} class="brand-logo-img" alt="logo"
+              referrerpolicy="no-referrer" decoding="async"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+            <svg class="brand-logo-fallback" style="display:none" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+          </>
         ) : (
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
@@ -30,7 +36,8 @@ const navItems = [
       <span class="brand-name">{siteConfig.siteName}</span>
     </a>
 
-    <nav class="nav">
+    <!-- 桌面端导航 -->
+    <nav class="nav" id="main-nav">
       {navItems.map((item) => (
         <a href={item.path} class:list={['nav-item', { active: isActive(item.path) }]}>{item.label}</a>
       ))}
@@ -47,9 +54,73 @@ const navItems = [
         />
       </form>
       <ThemeToggle />
+      <!-- 移动端汉堡按钮 -->
+      <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="打开菜单" aria-expanded="false">
+        <span class="menu-bar"></span>
+        <span class="menu-bar"></span>
+        <span class="menu-bar"></span>
+      </button>
     </div>
   </div>
+
+  <!-- 移动端下拉菜单 -->
+  <nav class="mobile-nav" id="mobile-nav" aria-hidden="true">
+    {navItems.map((item) => (
+      <a href={item.path} class:list={['mobile-nav-item', { active: isActive(item.path) }]}>{item.label}</a>
+    ))}
+  </nav>
 </header>
+
+<script>
+  // 初始化移动端菜单（使用事件委托，避免 View Transitions 导航后元素引用失效）
+  const initMobileMenu = () => {
+    const btn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-nav');
+    if (!btn || !menu) return;
+
+    btn.addEventListener('click', () => {
+      const open = menu.getAttribute('aria-hidden') === 'false';
+      menu.setAttribute('aria-hidden', String(open));
+      btn.setAttribute('aria-expanded', String(!open));
+    });
+
+    menu.querySelectorAll('.mobile-nav-item').forEach((link) => {
+      link.addEventListener('click', () => {
+        menu.setAttribute('aria-hidden', 'true');
+        btn.setAttribute('aria-expanded', 'false');
+      });
+    });
+  };
+
+  // 首次加载 + 每次 View Transitions 导航后重新绑定
+  document.addEventListener('astro:page-load', initMobileMenu);
+
+  // 以下监听绑定在 document/window 上，不受导航影响，只需注册一次
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('mobile-nav');
+    const btn = document.getElementById('mobile-menu-btn');
+    if (!menu || !btn) return;
+    if (menu.getAttribute('aria-hidden') === 'false') {
+      const target = e.target as HTMLElement;
+      if (!menu.contains(target) && !btn.contains(target)) {
+        menu.setAttribute('aria-hidden', 'true');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const menu = document.getElementById('mobile-nav');
+    const btn = document.getElementById('mobile-menu-btn');
+    if (!menu || !btn) return;
+    if (menu.getAttribute('aria-hidden') === 'false') {
+      menu.setAttribute('aria-hidden', 'true');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.focus();
+    }
+  });
+</script>
 
 <style>
   .layout-header {
@@ -59,6 +130,7 @@ const navItems = [
     right: 0;
     z-index: 20;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     padding: 0 16px;
     transition: transform 0.36s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
@@ -82,8 +154,9 @@ const navItems = [
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: 18px;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-popup);
     transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    margin: 0 auto;
   }
 
   .brand {
@@ -111,6 +184,14 @@ const navItems = [
         object-fit: cover;
         border-radius: inherit;
       }
+
+      .brand-logo-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      }
     }
 
     .brand-name {
@@ -122,6 +203,7 @@ const navItems = [
     }
   }
 
+  /* 桌面端导航 */
   .nav {
     display: flex;
     align-items: center;
@@ -129,21 +211,22 @@ const navItems = [
     margin-left: auto;
 
     .nav-item {
-      padding: 7px 14px;
-      border-radius: var(--radius-pill);
+      padding: 7px 10px;
+      border-radius: 0;
       color: var(--nav-text-color);
       font-size: 15px;
       font-weight: 400;
       letter-spacing: 0.01em;
       text-decoration: none;
-      transition: background 0.22s ease, color 0.2s ease;
+      transition: color 0.2s ease;
 
       &:hover {
-        background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+        background: none;
+        color: var(--color-primary);
       }
 
       &.active {
-        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        background: none;
         color: var(--color-primary);
         font-weight: 500;
       }
@@ -180,14 +263,120 @@ const navItems = [
     }
   }
 
+  /* 汉堡按钮：桌面端隐藏 */
+  .mobile-menu-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .menu-bar {
+      display: block;
+      width: 18px;
+      height: 1.5px;
+      background: var(--nav-text-color);
+      border-radius: 1px;
+      transition: transform 0.28s ease, opacity 0.2s ease;
+    }
+  }
+
+  /* 打开状态：汉堡变 X */
+  .mobile-menu-btn[aria-expanded="true"] {
+    .menu-bar:nth-child(1) {
+      transform: translateY(5.5px) rotate(45deg);
+    }
+    .menu-bar:nth-child(2) {
+      opacity: 0;
+    }
+    .menu-bar:nth-child(3) {
+      transform: translateY(-5.5px) rotate(-45deg);
+    }
+  }
+
+  /* 移动端下拉菜单 */
+  .mobile-nav {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    max-width: 840px;
+    margin: 8px auto 0;
+    padding: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: 18px;
+    box-shadow: var(--shadow-popup);
+    transform-origin: top center;
+    animation: mobile-nav-in 0.22s ease both;
+
+    .mobile-nav-item {
+      display: block;
+      padding: 12px 16px;
+      border-radius: 10px;
+      color: var(--nav-text-color);
+      font-size: 16px;
+      font-weight: 400;
+      text-decoration: none;
+      transition: background 0.15s ease, color 0.15s ease;
+
+      &:hover {
+        background: var(--bg-tertiary);
+        color: var(--color-primary);
+      }
+
+      &.active {
+        color: var(--color-primary);
+        font-weight: 500;
+        background: var(--bg-tertiary);
+      }
+    }
+
+    &[aria-hidden="false"] {
+      display: flex;
+    }
+  }
+
+  @keyframes mobile-nav-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* 平板及以下：隐藏桌面导航，显示汉堡按钮 */
   @media (max-width: 768px) {
     .header-pill {
       gap: 10px;
       padding: 6px 10px 6px 12px;
+      border-radius: 14px;
     }
 
     .brand .brand-name {
       display: none;
+    }
+
+    .nav {
+      display: none;
+    }
+
+    .mobile-menu-btn {
+      display: flex;
     }
 
     .header-actions .search-input {

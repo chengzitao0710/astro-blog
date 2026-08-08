@@ -28,7 +28,7 @@ const isGitHubLink = (url: string) => /github\.com/i.test(url || '');
 const getGitHubAvatar = (url: string) => {
   const match = (url || '').match(/github\.com\/([^/?#]+)/i);
   if (!match) return '';
-  return `https://github.com/${match[1]}.png?size=80`;
+  return `https://avatars.githubusercontent.com/${match[1]}`;
 };
 
 const formatUrl = (url: string) => {
@@ -49,7 +49,17 @@ const socialLinks = siteConfig.socialLinks;
     <!-- Hero 区域 -->
     <div class="about-hero" data-reveal>
       {siteConfig.authorAvatar ? (
-        <img src={siteConfig.authorAvatar} alt={siteConfig.siteAuthor} class="hero-avatar" />
+        <>
+          <div class="hero-avatar-wrap img-loading">
+            <img src={siteConfig.authorAvatar} alt={siteConfig.siteAuthor} class="hero-avatar"
+              referrerpolicy="no-referrer" decoding="async" fetchpriority="high"
+              onload="this.style.opacity='1'"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+            <div class="hero-avatar hero-avatar-fallback" style="display:none">
+              <span>{siteConfig.siteAuthor.charAt(0).toUpperCase()}</span>
+            </div>
+          </div>
+        </>
       ) : (
         <div class="hero-avatar hero-avatar-fallback">
           <span>{siteConfig.siteAuthor.charAt(0).toUpperCase()}</span>
@@ -99,13 +109,17 @@ const socialLinks = siteConfig.socialLinks;
           {socialLinks.map((link) => (
             <a href={link.url} target="_blank" rel="noopener noreferrer" class="contact-card">
               {isGitHubLink(link.url) && getGitHubAvatar(link.url) ? (
-                <img
-                  src={getGitHubAvatar(link.url)}
-                  alt={link.name}
-                  class="contact-avatar"
-                  loading="lazy"
-                  referrerpolicy="no-referrer"
-                />
+                <div class="contact-avatar-wrap">
+                  <img
+                    src={getGitHubAvatar(link.url)}
+                    alt={link.name}
+                    class="contact-avatar"
+                    loading="lazy" decoding="async" fetchpriority="low"
+                    referrerpolicy="no-referrer"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"
+                  />
+                  <span class="contact-icon contact-icon-fallback" set:html={getPlatformIcon(link.url, link.name)} />
+                </div>
               ) : (
                 <span class="contact-icon" set:html={getPlatformIcon(link.url, link.name)} />
               )}
@@ -161,14 +175,21 @@ const socialLinks = siteConfig.socialLinks;
     text-align: center;
     padding: 20px 0 36px;
 
+    .hero-avatar-wrap {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      margin-bottom: 16px;
+    }
+
     .hero-avatar {
-      width: 88px;
-      height: 88px;
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      margin-bottom: 16px;
       border: 2px solid var(--border-primary);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      box-shadow: var(--shadow-card);
+      display: block;
     }
 
     .hero-avatar-fallback {
@@ -183,8 +204,8 @@ const socialLinks = siteConfig.socialLinks;
     }
 
     .hero-name {
-      font-size: 1.6em;
-      font-weight: 600;
+      font-size: 30px;
+      font-weight: 500;
       color: var(--text-primary);
       margin-bottom: 8px;
     }
@@ -355,7 +376,7 @@ const socialLinks = siteConfig.socialLinks;
     &:hover {
       transform: translateY(-2px);
       border-color: var(--color-primary);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+      box-shadow: var(--shadow-card);
     }
 
     .contact-avatar,
@@ -371,8 +392,19 @@ const socialLinks = siteConfig.socialLinks;
       color: var(--color-primary);
     }
 
+    .contact-avatar-wrap {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      flex-shrink: 0;
+    }
+
     .contact-avatar {
       object-fit: cover;
+    }
+
+    .contact-icon-fallback {
+      display: none;
     }
 
     .contact-info {
@@ -412,21 +444,29 @@ const socialLinks = siteConfig.socialLinks;
   }
 </style>
 
-<!-- 入场动画脚本 -->
+<!-- 入场动画脚本：astro:page-load 确保 View Transitions 导航后重新执行 -->
 <script>
-  const revealEls = document.querySelectorAll<HTMLElement>('.about-page [data-reveal]');
-  if (revealEls.length) {
-    const revealObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('revealed');
-            revealObserver.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.15 }
-    );
-    revealEls.forEach((el) => revealObserver.observe(el));
-  }
+  document.addEventListener('astro:page-load', () => {
+    const revealEls = document.querySelectorAll<HTMLElement>('.about-page [data-reveal]');
+    revealEls.forEach((el) => {
+      // 视口内元素直接显示，避免导航后 IntersectionObserver 延迟导致闪现
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        el.classList.add('revealed');
+        return;
+      }
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('revealed');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.15 }
+      );
+      observer.observe(el);
+    });
+  });
 </script>

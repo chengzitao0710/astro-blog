@@ -1,18 +1,16 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ArticleCard from '../../components/ArticleCard.astro';
-import { getCollection } from 'astro:content';
+import CollectionList from '../../components/CollectionList.astro';
+import { getPostsByDate } from '../../utils/posts';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => !data.draft);
+  const posts = await getPostsByDate();
   const categories = [...new Set(posts.map((p) => p.data.category))];
   return categories.map((category) => ({
     params: { name: category },
     props: {
       category,
-      posts: posts
-        .filter((p) => p.data.category === category)
-        .sort((a, b) => b.data.date.getTime() - a.data.date.getTime()),
+      posts: posts.filter((p) => p.data.category === category),
     },
   }));
 }
@@ -21,89 +19,11 @@ const { category, posts } = Astro.props;
 ---
 
 <BaseLayout title={`分类：${category}`} description={`分类「${category}」下的所有文章`} wideContent>
-  <div class="list-page">
-    <div class="page-header">
-      <a href="/categories" class="back-link">← 所有分类</a>
-      <h1 class="page-title">{category}</h1>
-      <p class="page-count">共 {posts.length} 篇文章</p>
-    </div>
-
-    <div class="card-grid">
-      {posts.map((post) => (
-        <ArticleCard
-          title={post.data.title}
-          summary={post.data.summary}
-          date={post.data.date}
-          category={post.data.category}
-          tags={post.data.tags}
-          cover={typeof post.data.cover === 'string' ? post.data.cover : post.data.cover?.src}
-          slug={post.id}
-          pinned={post.data.pinned}
-        />
-      ))}
-    </div>
-
-    {posts.length === 0 && <p class="empty-text">该分类下暂无文章</p>}
-  </div>
+  <CollectionList
+    title={category}
+    backHref="/categories"
+    backLabel="所有分类"
+    posts={posts}
+    emptyText="该分类下暂无文章"
+  />
 </BaseLayout>
-
-<style>
-  .list-page {
-    color: var(--text-primary);
-  }
-
-  .page-header {
-    margin-bottom: 28px;
-
-    .back-link {
-      display: inline-block;
-      font-size: 13px;
-      color: var(--text-tertiary);
-      text-decoration: none;
-      margin-bottom: 12px;
-      transition: color 0.2s ease;
-
-      &:hover {
-        color: var(--color-primary);
-      }
-    }
-
-    .page-title {
-      font-size: 1.8em;
-      font-weight: 500;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-
-    .page-count {
-      font-size: 14px;
-      color: var(--text-tertiary);
-    }
-  }
-
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-  }
-
-  .empty-text {
-    color: var(--text-tertiary);
-    font-size: 14px;
-    padding: 40px 0;
-    text-align: center;
-  }
-
-  @media (max-width: 1024px) {
-    .card-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (max-width: 640px) {
-    .card-grid {
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-  }
-</style>

@@ -10,10 +10,6 @@
   --color-primary: #000000;
   --color-primary-dark: #000000;
   --color-primary-light: #e5e7eb;
-  --primary-color: #000000;
-  --primary-light: #e5e7eb;
-  --primary-lightest: #f3f4f6;
-  --primary-dark: #000000;
   --gradient-primary: linear-gradient(135deg, #000000 0%, #ffffff 100%);
   // 强调色填充元素上的前景色（图标/文字）：纯黑按钮配白字
   --accent-contrast: #ffffff;
@@ -22,16 +18,14 @@
   --text-primary: #1f2937;
   --text-secondary: #4b5563;
   --text-tertiary: #6b7280;
-  --text-muted: #9ca3af;
-  --text-placeholder: #9ca3af;
+  --text-muted: #71717a;
+  --text-placeholder: #71717a;
   --text-disabled: #d1d5db;
   --nav-text-color: #1f2937;
 
   // 背景
   --bg-primary: #ffffff;
-  --bg-color: #ffffff;
   --bg-color-page: #fafafa;
-  --bg-color-card: #ffffff;
   --bg-card: #ffffff;
   --bg-secondary: #f9fafb;
   --bg-tertiary: #f3f4f6;
@@ -40,8 +34,6 @@
   --border-primary: #e5e7eb;
   --border-secondary: #f3f4f6;
   --border-hover: #d1d5db;
-  --border-color: #e5e7eb;
-  --border-color-light: #f3f4f6;
 
   // 页面背景系统（径向渐变极克制：左上角微偏灰，几乎感受不到）
   --page-solid: #ffffff;
@@ -56,7 +48,6 @@
 
   // 圆角
   --radius-sm: 6px;
-  --radius-small: 6px;
   --radius: 8px;
   --radius-medium: 12px;
   --radius-large: 16px;
@@ -66,6 +57,13 @@
   --transition: all 0.2s ease;
   --transition-fast: all 0.16s ease;
   --transition-smooth: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+
+  // 阴影（浅色模式：黑色微透明）
+  --shadow-popup: 0 10px 24px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-avatar: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --shadow-btn: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   // 布局
   --header-height: 64px;
@@ -85,10 +83,6 @@ html[data-theme='dark'] {
   --color-primary: #ffffff;
   --color-primary-dark: #ffffff;
   --color-primary-light: rgba(255, 255, 255, 0.14);
-  --primary-color: #ffffff;
-  --primary-light: rgba(255, 255, 255, 0.14);
-  --primary-lightest: rgba(255, 255, 255, 0.08);
-  --primary-dark: #ffffff;
   --gradient-primary: linear-gradient(135deg, #ffffff 0%, #000000 100%);
   // 强调色填充元素前景：纯白按钮配黑字
   --accent-contrast: #000000;
@@ -96,15 +90,13 @@ html[data-theme='dark'] {
   --text-primary: #f3f4f6;
   --text-secondary: #d1d5db;
   --text-tertiary: #9ca3af;
-  --text-muted: #6b7280;
-  --text-placeholder: #6b7280;
+  --text-muted: #9ca3af;
+  --text-placeholder: #9ca3af;
   --text-disabled: #4b5563;
   --nav-text-color: #fafafa;
 
   --bg-primary: #0a0a0a;
-  --bg-color: #0a0a0a;
   --bg-color-page: #111111;
-  --bg-color-card: #181818;
   --bg-card: #181818;
   --bg-secondary: #141414;
   --bg-tertiary: #1f1f1f;
@@ -112,8 +104,6 @@ html[data-theme='dark'] {
   --border-primary: #27272a;
   --border-secondary: #1f1f1f;
   --border-hover: #3f3f46;
-  --border-color: #27272a;
-  --border-color-light: #1f1f1f;
 
   --page-solid: #0a0a0a;
   // 暗色模式径向渐变极克制：左上角微亮，几乎感受不到
@@ -121,6 +111,13 @@ html[data-theme='dark'] {
   --page-grid-color: rgba(255, 255, 255, 0.03);
   --page-glow-1: rgba(255, 255, 255, 0.035);
   --page-glow-2: rgba(255, 255, 255, 0.025);
+
+  // 阴影（暗色模式：纯黑背景上 shadow 需要更高透明才能感知）
+  --shadow-popup: 0 10px 24px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-avatar: 0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-btn: 0 4px 12px rgba(0, 0, 0, 0.4);
 
   // 作者卡片专用黑白渐变（暗色模式：径向白→黑，中心白保证字母对比）
   --author-gradient: radial-gradient(circle, #ffffff 0%, #000000 100%);
@@ -293,6 +290,11 @@ a {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 16px;
+    // 小屏溢出滚动
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
 
     th, td {
       padding: 10px 14px;
@@ -344,24 +346,166 @@ html[data-theme='dark'] .astro-code {
   background: var(--shiki-dark-bg, #0d1117) !important;
 }
 
-// 页面加载淡入动画（替代 ClientRouter 的页面过渡效果）
-@keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+// ============================================
+// 键盘导航 :focus-visible 样式
+// 默认去掉 focus 轮廓（避免鼠标点击时出现难看的默认框），
+// 仅在键盘导航时显示自定义焦点环
+// ============================================
+:focus {
+  outline: none;
 }
 
-.layout-main .content {
-  animation: page-enter 0.45s ease both;
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 输入框已有自己的 focus 样式，不覆盖 */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+
+/* 按钮焦点 */
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* 卡片内的链接——避免方形 outline 盖住圆角卡片 */
+.card a:focus-visible {
+  border-radius: 4px;
+}
+
+/* 导航链接 */
+.nav-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  border-radius: 6px;
+}
+
+/* 代码块内不需要额外 outline */
+.astro-code *:focus-visible {
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .layout-main .content {
     animation: none;
+  }
+
+  img {
+    animation: none !important;
+  }
+}
+
+/* 封面图/卡片图渐入动画（纯 CSS，不依赖 JS onload） */
+@keyframes cover-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 图片加载 Shimmer 骨架屏 — 流光扫过效果 */
+@keyframes img-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.img-loading {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent 25%,
+      var(--bg-secondary) 45%,
+      transparent 65%
+    );
+    background-size: 200% 100%;
+    animation: img-shimmer 1.8s ease-in-out infinite;
+  }
+
+  > img {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    position: relative;
+    z-index: 2;
+    /* CSS fallback：onload 不触发时 3s 后强制显示 */
+    animation: cover-fade-in 0.5s ease 3s both;
+  }
+}
+
+// ============================================
+// 代码块行号（CSS counter 实现，不污染复制的代码内容）
+// ============================================
+.markdown-body pre {
+  counter-reset: line-number;
+}
+
+.markdown-body pre code > span.line {
+  counter-increment: line-number;
+}
+
+.markdown-body pre code > span.line::before {
+  content: counter(line-number);
+  display: inline-block;
+  width: 1.5em;
+  margin-right: 1em;
+  text-align: right;
+  color: var(--text-muted);
+  opacity: 0.5;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+// ============================================
+// 全局打印样式
+// ============================================
+@media print {
+  .layout-header,
+  .layout-footer,
+  .layout-bg,
+  .skip-link {
+    display: none !important;
+  }
+
+  .layout-main {
+    padding-top: 0 !important;
+  }
+
+  .main-inner {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+
+  pre,
+  blockquote {
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
   }
 }

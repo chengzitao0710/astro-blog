@@ -2,27 +2,125 @@
 import { siteConfig } from '../config';
 
 // Giscus 评论（基于 GitHub Discussions）
-// 配置在 src/config.ts 的 giscus 字段，https://giscus.app 生成后填入
 const g = siteConfig.giscus;
 const isConfigured = g.repo && g.repoId && g.categoryId;
 ---
 
 {isConfigured ? (
-  <script src="https://giscus.app/client.js"
-    data-repo={g.repo}
-    data-repo-id={g.repoId}
-    data-category={g.category}
-    data-category-id={g.categoryId}
-    data-mapping={g.mapping}
-    data-strict="0"
-    data-reactions-enabled={g.reactionsEnabled}
-    data-emit-metadata={g.emitMetadata}
-    data-input-position={g.inputPosition}
-    data-theme={g.theme}
-    data-lang={g.lang}
-    crossorigin="anonymous"
-    async
-  ></script>
+  <>
+    <span id="giscus-cfg" hidden
+      data-repo={g.repo}
+      data-repo-id={g.repoId}
+      data-category={g.category}
+      data-category-id={g.categoryId}
+      data-mapping={g.mapping}
+      data-reactions-enabled={g.reactionsEnabled}
+      data-emit-metadata={g.emitMetadata}
+      data-input-position={g.inputPosition}
+      data-lang={g.lang}
+    ></span>
+    <script is:inline>
+      (function () {
+        if (window.__giscusSetup) return;
+        window.__giscusSetup = true;
+
+        // 跟踪 Giscus iframe 是否已完全就绪（能接收 postMessage）
+        var giscusReady = false;
+
+        function currentTheme() {
+          return document.documentElement.getAttribute('data-theme') === 'dark'
+            ? 'dark' : 'light';
+        }
+
+        // 向 Giscus iframe 发送当前主题
+        function postTheme() {
+          var frame = document.querySelector('iframe.giscus-frame');
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage(
+              { giscus: { setConfig: { theme: currentTheme() } } },
+              'https://giscus.app'
+            );
+          }
+        }
+
+        // 加载 / 重新加载 Giscus
+        function loadGiscus() {
+          var cfg = document.getElementById('giscus-cfg');
+          if (!cfg) return;
+
+          giscusReady = false;
+
+          // 清理所有 Giscus 残留（.giscus 容器 + script 标签）
+          // 用 querySelectorAll 而非 querySelector，防止竞态产生多个残留
+          document.querySelectorAll('.giscus').forEach(function(d) { d.remove(); });
+          document.querySelectorAll('script[src*="giscus.app/client.js"]').forEach(function(s) { s.remove(); });
+
+          // 用当前主题创建 Giscus 脚本
+          var s = document.createElement('script');
+          s.src = 'https://giscus.app/client.js';
+          s.setAttribute('data-repo', cfg.dataset.repo);
+          s.setAttribute('data-repo-id', cfg.dataset.repoId);
+          s.setAttribute('data-category', cfg.dataset.category);
+          s.setAttribute('data-category-id', cfg.dataset.categoryId);
+          s.setAttribute('data-mapping', cfg.dataset.mapping);
+          s.setAttribute('data-strict', '0');
+          s.setAttribute('data-reactions-enabled', cfg.dataset.reactionsEnabled);
+          s.setAttribute('data-emit-metadata', cfg.dataset.emitMetadata);
+          s.setAttribute('data-input-position', cfg.dataset.inputPosition);
+          s.setAttribute('data-theme', currentTheme());
+          s.setAttribute('data-lang', cfg.dataset.lang);
+          s.crossOrigin = 'anonymous';
+          s.async = true;
+          cfg.parentNode.insertBefore(s, cfg.nextSibling);
+
+          // 加载后持续同步主题（每 500ms，最多 3 秒）
+          // 覆盖：iframe 在 theme-change 之后才创建完毕的场景
+          var syncCount = 0;
+          var syncInterval = setInterval(function () {
+            if (giscusReady || syncCount >= 6) {
+              clearInterval(syncInterval);
+              if (giscusReady) postTheme();
+              return;
+            }
+            postTheme();
+            syncCount++;
+          }, 500);
+        }
+
+        // 每次页面导航（含首次）后加载 Giscus
+        document.addEventListener('astro:page-load', loadGiscus);
+
+        // 主题切换：就绪 → postMessage 即时同步；未就绪 → 重建脚本用正确主题
+        window.addEventListener('theme-change', function () {
+          if (giscusReady) {
+            postTheme();
+          } else {
+            loadGiscus();
+          }
+        });
+
+        // 跟踪 Giscus 就绪状态 + 就绪时同步主题
+        window.addEventListener('message', function (e) {
+          if (e.origin !== 'https://giscus.app') return;
+          var data = e.data;
+          if (typeof data === 'string') {
+            try { data = JSON.parse(data); } catch (_) { return; }
+          }
+          if (data && data.giscus) {
+            if (data.giscus.ready) {
+              giscusReady = true;
+              postTheme();
+              setTimeout(postTheme, 100);
+              setTimeout(postTheme, 300);
+            }
+            if (data.giscus.discussion) {
+              giscusReady = true;
+            }
+          }
+        });
+      })();
+    </script>
+  </>
 ) : (
   <div class="giscus-placeholder">
     <p>评论系统未配置</p>
@@ -56,25 +154,3 @@ const isConfigured = g.repo && g.repoId && g.categoryId;
     }
   }
 </style>
-
-<script>
-  // 同步暗色模式到 Giscus iframe
-  const syncGiscusTheme = () => {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
-    if (iframe) {
-      iframe.contentWindow?.postMessage(
-        { giscus: { setConfig: { theme: isDark ? 'dark' : 'light' } } },
-        'https://giscus.app'
-      );
-    }
-  };
-
-  // 初始加载与主题切换时同步
-  const observer = new MutationObserver(syncGiscusTheme);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  // Giscus iframe 加载完成后同步一次
-  window.addEventListener('message', (e) => {
-    if (e.origin === 'https://giscus.app') syncGiscusTheme();
-  });
-</script>

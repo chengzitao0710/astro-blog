@@ -12,12 +12,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <link rel="stylesheet" href="/pagefind/pagefind-ui.css" />
-<script is:inline src="/pagefind/pagefind-ui.js"></script>
-<script is:inline>
-  window.addEventListener('DOMContentLoaded', () => {
+<script is:inline src="/pagefind/pagefind-ui.js" data-astro-rerun></script>
+<script>
+  async function initSearch() {
+    const container = document.getElementById('search');
+    if (!container) return;
+    // 防止重复初始化
+    if (container.querySelector('.pagefind-ui')) return;
+    container.innerHTML = '';
+
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q') || '';
 
+    // 等待 PagefindUI 全局变量可用（外部脚本可能还在加载）
+    let retries = 0;
+    while (typeof (window as any).PagefindUI === 'undefined' && retries < 50) {
+      await new Promise((r) => setTimeout(r, 100));
+      retries++;
+    }
+
+    const PagefindUI = (window as any).PagefindUI;
     if (typeof PagefindUI !== 'undefined') {
       const ui = new PagefindUI({
         element: '#search',
@@ -26,20 +40,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         autofocus: true,
       });
       if (q) {
-        const input = document.querySelector('.pagefind-ui__search-input');
+        const input = document.querySelector('.pagefind-ui__search-input') as HTMLInputElement;
         if (input) {
           input.value = q;
           ui.triggerSearch(q);
         }
       }
     } else {
-      const el = document.getElementById('search');
-      if (el) {
-        el.innerHTML =
-          '<p style="color: var(--text-tertiary); font-size: 14px; padding: 20px 0;">搜索索引尚未生成。本地开发需先执行 <code>npm run build</code> 生成 Pagefind 索引。</p>';
-      }
+      container.innerHTML =
+        '<p style="color: var(--text-tertiary); font-size: 14px; padding: 20px 0;">搜索索引尚未生成。本地开发需先执行 <code>npm run build</code> 生成 Pagefind 索引。</p>';
     }
-  });
+  }
+
+  document.addEventListener('astro:page-load', initSearch);
 </script>
 
 <style>
@@ -125,5 +138,52 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     font-size: 14px !important;
     color: var(--text-secondary) !important;
     line-height: 1.6 !important;
+  }
+
+  /* 搜索高亮 */
+  :global(.pagefind-ui__result__excerpt mark) {
+    background: var(--color-primary-light) !important;
+    color: var(--color-primary) !important;
+    border-radius: 2px;
+    padding: 1px 2px;
+  }
+
+  /* 搜索结果元信息 */
+  :global(.pagefind-ui__result__meta) {
+    font-size: 12px !important;
+    color: var(--text-tertiary) !important;
+  }
+
+  /* Load more 按钮 */
+  :global(.pagefind-ui__button) {
+    border: 1px solid var(--border-primary) !important;
+    border-radius: var(--radius) !important;
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    cursor: pointer;
+    transition: var(--transition);
+
+    &:hover {
+      border-color: var(--color-primary) !important;
+      color: var(--color-primary) !important;
+    }
+  }
+
+  /* 清除按钮 */
+  :global(.pagefind-ui__search-clear) {
+    color: var(--text-tertiary) !important;
+    transition: var(--transition);
+
+    &:hover {
+      color: var(--text-primary) !important;
+    }
+  }
+
+  /* 搜索结果数目提示 */
+  :global(.pagefind-ui__message) {
+    font-size: 13px !important;
+    color: var(--text-tertiary) !important;
   }
 </style>

@@ -1,10 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
+import { getPostsByDate } from '../utils/posts';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime()
-);
+const posts = await getPostsByDate();
 
 // 按分类聚合
 const categoryMap = new Map<string, typeof posts>();
@@ -24,6 +22,18 @@ const categories = [...categoryMap.entries()]
   .sort((a, b) => b.count - a.count);
 
 const totalPosts = posts.length;
+
+// 按标签聚合（用于标签云）
+const tagMap = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+  }
+}
+const tags = [...tagMap.entries()]
+  .map(([name, count]) => ({ name, count }))
+  .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
 ---
 
 <BaseLayout title="分类" description="所有文章分类总览">
@@ -55,6 +65,26 @@ const totalPosts = posts.length;
     </div>
 
     {categories.length === 0 && <p class="empty-text">暂无分类，请先添加文章</p>}
+
+    {/* 标签云 */}
+    {tags.length > 0 && (
+      <section class="tag-cloud-section">
+        <h2 class="tag-cloud-title">标签</h2>
+        <div class="tag-cloud">
+          {tags.map((tag) => {
+            return (
+              <a
+                href={`/tag/${encodeURIComponent(tag.name)}/`}
+                class="cloud-tag"
+              >
+                {tag.name}
+                <span class="cloud-count">{tag.count}</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    )}
   </div>
 </BaseLayout>
 
@@ -96,7 +126,7 @@ const totalPosts = posts.length;
     &:hover {
       border-color: var(--color-primary);
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+      box-shadow: var(--shadow-card);
 
       .card-name {
         color: var(--color-primary);
@@ -187,6 +217,55 @@ const totalPosts = posts.length;
     font-size: 14px;
     padding: 40px 0;
     text-align: center;
+  }
+
+  /* 标签云 */
+  .tag-cloud-section {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border-secondary);
+  }
+
+  .tag-cloud-title {
+    font-size: 1.3em;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+  }
+
+  .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+  }
+
+  .cloud-tag {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9em;
+    line-height: 1.6;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 12%, transparent);
+    }
+
+    .cloud-count {
+      font-size: 0.7em;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
   }
 
   @media (max-width: 640px) {

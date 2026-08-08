@@ -1,20 +1,14 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { siteConfig } from '../config';
-import { getCollection } from 'astro:content';
+import { formatDate, getReadingTime } from '../utils/date';
+import { getAllPosts } from '../utils/posts';
 
-// 读取所有非草稿文章
-const allPosts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime()
-);
-
-// 置顶文章排前
-const posts = [...allPosts].sort(
-  (a, b) => Number(b.data.pinned) - Number(a.data.pinned)
-);
+// 读取所有非草稿文章（置顶排前，再按日期降序）
+const allPosts = await getAllPosts();
 
 // 首页只展示最新 7 篇
-const homePosts = posts.slice(0, 7);
+const homePosts = allPosts.slice(0, 7);
 
 // 统计分类/标签
 const categoryMap = new Map<string, number>();
@@ -33,22 +27,21 @@ const aboutIntro = (() => {
   const plain = desc.replace(/[#*`>\-\[\]()!]/g, '').replace(/\s+/g, ' ').trim();
   return plain.length > 120 ? plain.slice(0, 120) + '…' : plain || '记录学习过程、项目实践，以及那些让我感兴趣的事物。';
 })();
-
-const formatDate = (date: Date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
 ---
 
 <BaseLayout title={siteConfig.siteName} description={siteConfig.siteDescription} hideSidebar>
   <div class="intro-home">
     <!-- Hero：头像 + 站名 + 徽章 -->
     <section class="profile-hero">
-      <div class="hero-avatar">
+      <div class="hero-avatar img-loading">
         {siteConfig.authorAvatar ? (
-          <img src={siteConfig.authorAvatar} alt="作者头像" class="hero-avatar-img" />
+          <>
+            <img src={siteConfig.authorAvatar} alt="作者头像" class="hero-avatar-img"
+              referrerpolicy="no-referrer" decoding="async" fetchpriority="high"
+              onload="this.style.opacity='1'"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+            <span style="display:none">{siteInitial}</span>
+          </>
         ) : (
           <span>{siteInitial}</span>
         )}
@@ -101,6 +94,7 @@ const formatDate = (date: Date) => {
                 <span class="feed-date">{formatDate(post.data.date)}</span>
                 <span class="feed-title">{post.data.title}</span>
                 {post.data.pinned && <span class="feed-pin">置顶</span>}
+                <span class="feed-time">{getReadingTime(post.body || '')} 分钟</span>
                 <span class="feed-chevron">→</span>
               </a>
             ))}
@@ -167,14 +161,15 @@ const formatDate = (date: Date) => {
     padding: 24px 20px 32px;
 
     .hero-avatar {
-      display: grid;
-      place-items: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 96px;
       height: 96px;
       border-radius: 50%;
       background: var(--bg-card);
       border: 1px solid var(--border-primary);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      box-shadow: var(--shadow-avatar);
       margin-bottom: 16px;
       overflow: hidden;
       color: var(--color-primary);
@@ -316,10 +311,28 @@ const formatDate = (date: Date) => {
     }
   }
 
-  /* 文章信息流 */
+  /* 文章信息流 — 时间线风格 */
   .feed-list {
     display: flex;
     flex-direction: column;
+    position: relative;
+    padding-left: 14px;
+
+    /* 竖线 */
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: linear-gradient(to bottom,
+        var(--border-primary),
+        var(--border-secondary) 80%,
+        transparent 100%
+      );
+      border-radius: 1px;
+    }
 
     .feed-item {
       display: flex;
@@ -329,6 +342,22 @@ const formatDate = (date: Date) => {
       border-bottom: 1px solid var(--border-secondary);
       text-decoration: none;
       transition: background 0.2s ease, transform 0.2s ease;
+      position: relative;
+
+      /* 时间线圆点 */
+      &::before {
+        content: '';
+        position: absolute;
+        left: -19px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 8px;
+        height: 8px;
+        background: var(--bg-card);
+        border: 2px solid var(--border-primary);
+        border-radius: 50%;
+        transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+      }
 
       &:last-child {
         border-bottom: none;
@@ -336,7 +365,13 @@ const formatDate = (date: Date) => {
 
       &:hover {
         background: var(--bg-tertiary);
-        transform: translateX(2px);
+        transform: translateX(3px);
+
+        &::before {
+          border-color: var(--color-primary);
+          background: var(--color-primary);
+          transform: translateY(-50%) scale(1.3);
+        }
 
         .feed-title {
           color: var(--color-primary);
@@ -375,6 +410,12 @@ const formatDate = (date: Date) => {
         color: #fff;
         font-size: 11px;
         font-weight: 500;
+      }
+
+      .feed-time {
+        flex-shrink: 0;
+        font-size: 12px;
+        color: var(--text-tertiary);
       }
 
       .feed-chevron {
@@ -430,6 +471,17 @@ const formatDate = (date: Date) => {
     .feed-list .feed-item .feed-date {
       width: 72px;
       font-size: 12px;
+    }
+
+    /* 窄屏时间线缩进减小 */
+    .feed-list {
+      padding-left: 10px;
+    }
+
+    .feed-list .feed-item::before {
+      left: -15px;
+      width: 6px;
+      height: 6px;
     }
   }
 </style>

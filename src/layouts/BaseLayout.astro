@@ -1,4 +1,5 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import Header from '../components/Header.astro';
 import { siteConfig } from '../config';
 import '../styles/global.scss';
@@ -6,21 +7,31 @@ import '../styles/global.scss';
 interface Props {
   title?: string;
   description?: string;
+  image?: string;
   // 是否隐藏侧边栏布局（文章详情、关于我等全宽页面）
   hideSidebar?: boolean;
   // 宽内容模式：隐藏侧边栏 + 内容撑满布局宽度（用于文章列表 4 列网格页）
   wideContent?: boolean;
+  // JSON-LD 结构化数据（文章页传入 Article 类型）
+  jsonLd?: Record<string, any>;
 }
 
 const {
   title = siteConfig.siteName,
   description = siteConfig.siteDescription,
+  image = '',
   hideSidebar = false,
   wideContent = false,
+  jsonLd,
 } = Astro.props;
 
 const fullTitle = title === siteConfig.siteName ? title : `${title} · ${siteConfig.siteName}`;
 const year = new Date().getFullYear();
+
+// Canonical URL：去除查询参数，保留纯路径
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+// OG 图片：优先传入的 image，其次站点默认 OG 图，最后回退到头像
+const ogImage = image || siteConfig.ogDefaultImage || siteConfig.authorAvatar;
 ---
 
 <!DOCTYPE html>
@@ -30,12 +41,37 @@ const year = new Date().getFullYear();
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="alternate" type="application/rss+xml" title={siteConfig.siteName} href="/rss.xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="keywords" content={siteConfig.siteKeywords} />
     <meta name="author" content={siteConfig.siteAuthor} />
     <meta name="generator" content={Astro.generator} />
     <title>{fullTitle}</title>
+
+    <!-- Canonical URL：避免分页/分类页被判重复内容 -->
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph / Twitter Card -->
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={Astro.url.href} />
+    <meta property="og:type" content={Astro.url.pathname === '/' ? 'website' : 'article'} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+
+    <!-- JSON-LD 结构化数据（文章页传入 BlogPosting schema） -->
+    {jsonLd && (
+      <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    )}
+
+    <!-- 图片 CDN 预连接：缩短 DNS + TLS 耗时 200-500ms -->
+    <link rel="dns-prefetch" href="https://76f2f781.cloudflare-imgbed-6ja.pages.dev" />
+    <link rel="preconnect" href="https://76f2f781.cloudflare-imgbed-6ja.pages.dev" crossorigin />
 
     <!-- Satoshi 字体（ragnote.top 同款，来自 Fontshare） -->
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
@@ -49,18 +85,32 @@ const year = new Date().getFullYear();
     <!-- KaTeX 数学公式样式 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous" />
 
-    <!-- 暗色模式：CSS 渲染前同步恢复，避免加载闪烁 -->
-    <script is:inline>
+    <!-- Client Router：SPA 般顺滑的页面切换 -->
+    <ClientRouter />
+
+    <!-- 暗色模式：CSS 渲染前同步恢复，避免加载闪烁。data-astro-rerun 确保每次 View Transitions 导航后重新执行 -->
+    <script is:inline data-astro-rerun>
       (() => {
         try {
           const saved = localStorage.getItem('theme');
           const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+          if (dark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
         } catch (e) {}
       })();
     </script>
+
+    <!-- 网站分析统计（配置在 config.ts analytics 字段，留空则不加载） -->
+    {siteConfig.analytics?.src && siteConfig.analytics?.websiteId && (
+      <script is:inline defer {...{ 'data-website-id': siteConfig.analytics.websiteId }} src={siteConfig.analytics.src}></script>
+    )}
   </head>
   <body>
+    <!-- 无障碍：键盘跳转主内容 -->
+    <a href="#main-content" class="skip-link">跳到主内容</a>
     <div class="frontend-layout">
       <!-- 背景层：纯色底 + 网格（带遮罩淡出） + 两角发光斑 -->
       <div class="layout-bg" aria-hidden="true">
@@ -72,7 +122,7 @@ const year = new Date().getFullYear();
 
       <Header />
 
-      <main class="layout-main">
+      <main class="layout-main" id="main-content">
         <div class="main-inner" class:list={{ 'no-sidebar': hideSidebar, 'wide-content': wideContent }}>
           <div class="content">
             <slot />
@@ -99,6 +149,26 @@ const year = new Date().getFullYear();
     </div>
 
     <style>
+      .skip-link {
+        position: fixed;
+        top: -100px;
+        left: 16px;
+        z-index: 100;
+        padding: 8px 16px;
+        background: var(--color-primary);
+        color: var(--accent-contrast);
+        border-radius: var(--radius);
+        font-size: 14px;
+        text-decoration: none;
+        transition: top 0.2s ease;
+
+        &:focus-visible {
+          top: 16px;
+          outline: 2px solid var(--color-primary);
+          outline-offset: 2px;
+        }
+      }
+
       .frontend-layout {
         position: relative;
         display: flex;
@@ -222,7 +292,7 @@ const year = new Date().getFullYear();
       /* 页脚 */
       .layout-footer {
         position: relative;
-        z-index: 1;
+        z-index: 0;
         border-top: 1px solid var(--border-primary);
 
         .footer-inner {
@@ -273,28 +343,72 @@ const year = new Date().getFullYear();
       }
     </style>
 
-    <!-- Header 滚动方向感知：向下收起 / 向上出现 -->
+    <!-- Header 滚动方向感知：向下收起 / 向上出现（astro:page-load 确保 View Transitions 导航后重新绑定） -->
     <script>
-      const header = document.getElementById('layout-header');
-      if (header) {
-        let lastScrollY = 0;
-        const handleScroll = () => {
-          const currentY = window.scrollY;
-          if (currentY < 80) {
-            header.classList.remove('header-hidden');
-            lastScrollY = currentY;
-            return;
-          }
-          const delta = currentY - lastScrollY;
-          if (delta > 8) {
-            header.classList.add('header-hidden');
-          } else if (delta < -4) {
-            header.classList.remove('header-hidden');
-          }
+      let lastScrollY = 0;
+      const handleScroll = () => {
+        const header = document.getElementById('layout-header');
+        if (!header) return;
+        const currentY = window.scrollY;
+        if (currentY < 80) {
+          header.classList.remove('header-hidden');
           lastScrollY = currentY;
-        };
-        window.addEventListener('scroll', handleScroll, { passive: true });
+          return;
+        }
+        const delta = currentY - lastScrollY;
+        if (delta > 8) {
+          header.classList.add('header-hidden');
+        } else if (delta < -4) {
+          header.classList.remove('header-hidden');
+        }
+        lastScrollY = currentY;
+      };
+      window.addEventListener('scroll', handleScroll, { passive: true });
+    </script>
+    <!-- 全局搜索快捷键 ⌘K / Ctrl+K -->
+    <script>
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          window.location.href = '/search';
+        }
+      });
+    </script>
+    <!-- 主题切换：事件委托绑定在 document 上，不受 ClientRouter body 替换影响 -->
+    <script>
+      // 主题恢复逻辑（复用于 is:inline 脚本和 astro:after-swap）
+      function restoreTheme() {
+        try {
+          const saved = localStorage.getItem('theme');
+          const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
+        } catch (e) {}
       }
+
+      // 主题切换按钮点击
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('#theme-toggle');
+        if (!btn) return;
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const next = isDark ? 'light' : 'dark';
+        if (next === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+        try { localStorage.setItem('theme', next); } catch (_) {}
+        // 派发自定义事件，通知 Giscus 等组件同步主题
+        window.dispatchEvent(new Event('theme-change'));
+      });
+
+      // View Transitions 导航后恢复主题：
+      // DOM swap 会用新页面的 <html> 属性覆盖现有属性（移除 JS 设置的 data-theme），
+      // astro:after-swap 在 swap 完成后、动画播放前触发，此时恢复主题避免闪烁。
+      document.addEventListener('astro:after-swap', restoreTheme);
     </script>
   </body>
 </html>

@@ -1,12 +1,12 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ArticleCard from '../../components/ArticleCard.astro';
-import { getCollection } from 'astro:content';
+import type { GetStaticPathsContext, CollectionEntry } from 'astro';
+import { getReadingTime } from '../../utils/date';
+import { getAllPosts, getCoverUrl } from '../../utils/posts';
 
-export async function getStaticPaths({ paginate }: { paginate: Function }) {
-  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-    (a, b) => b.data.date.getTime() - a.data.date.getTime()
-  );
+export async function getStaticPaths({ paginate }: GetStaticPathsContext) {
+  const posts = await getAllPosts();
   return paginate(posts, { pageSize: 16 });
 }
 
@@ -39,16 +39,17 @@ const pageHref = (n: number) => (n === 1 ? '/articles' : `/articles/${n}`);
     </div>
 
     <div class="card-grid">
-      {page.data.map((post: any) => (
+      {page.data.map((post: CollectionEntry<'posts'>) => (
         <ArticleCard
           title={post.data.title}
           summary={post.data.summary}
           date={post.data.date}
           category={post.data.category}
           tags={post.data.tags}
-          cover={typeof post.data.cover === 'string' ? post.data.cover : post.data.cover?.src}
+          cover={getCoverUrl(post)}
           slug={post.id}
           pinned={post.data.pinned}
+          readingTime={getReadingTime(post.body || '')}
         />
       ))}
     </div>
@@ -59,10 +60,11 @@ const pageHref = (n: number) => (n === 1 ? '/articles' : `/articles/${n}`);
     {page.lastPage > 1 && (
       <nav class="pagination" aria-label="文章分页">
         <a
-          href={page.url.prev}
+          href={page.url.prev || '#'}
           class:list={['page-btn', 'page-nav', { disabled: !page.url.prev }]}
           aria-label="上一页"
           aria-disabled={!page.url.prev}
+          {...(!page.url.prev ? { tabindex: '-1' } : {})}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </a>
@@ -80,10 +82,11 @@ const pageHref = (n: number) => (n === 1 ? '/articles' : `/articles/${n}`);
         )}
 
         <a
-          href={page.url.next}
+          href={page.url.next || '#'}
           class:list={['page-btn', 'page-nav', { disabled: !page.url.next }]}
           aria-label="下一页"
           aria-disabled={!page.url.next}
+          {...(!page.url.next ? { tabindex: '-1' } : {})}
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
