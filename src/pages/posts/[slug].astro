@@ -61,7 +61,7 @@ const jsonLd = {
 };
 ---
 
-<BaseLayout title={post.data.title} description={post.data.summary} image={cover || ''} hideSidebar jsonLd={jsonLd}>
+<BaseLayout title={post.data.title} description={post.data.summary} image={cover || ''} hideSidebar={toc.length === 0} jsonLd={jsonLd}>
   <!-- 阅读进度条 -->
   <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
 
@@ -107,37 +107,16 @@ const jsonLd = {
       </div>
     )}
 
-    <!-- 正文 + TOC 侧边栏 -->
-    <div class="article-body-wrapper">
-      <div class="article-content markdown-body" id="article-body" data-pagefind-body>
-        <Content />
-        <!-- Pagefind 索引补充：标题、摘要、分类、标签（隐藏，仅供搜索索引） -->
-        <div class="pagefind-index-meta" aria-hidden="true" hidden>
-          <h1>{post.data.title}</h1>
-          {post.data.summary && <p>{post.data.summary}</p>}
-          <p>分类：{post.data.category}</p>
-          <p>标签：{post.data.tags.join(' ')}</p>
-        </div>
+    <!-- 正文 -->
+    <div class="article-content markdown-body" id="article-body" data-pagefind-body>
+      <Content />
+      <!-- Pagefind 索引补充：标题、摘要、分类、标签（隐藏，仅供搜索索引） -->
+      <div class="pagefind-index-meta" aria-hidden="true" hidden>
+        <h1>{post.data.title}</h1>
+        {post.data.summary && <p>{post.data.summary}</p>}
+        <p>分类：{post.data.category}</p>
+        <p>标签：{post.data.tags.join(' ')}</p>
       </div>
-
-      {toc.length > 0 && (
-        <aside class="toc-sidebar" id="toc-sidebar">
-          <div class="toc">
-            <h4 class="toc-title">目录</h4>
-            <nav class="toc-nav">
-              {toc.map((item) => (
-                <a
-                  href={`#${item.slug}`}
-                  class:list={['toc-link', `toc-h${item.depth}`, { 'toc-active': false }]}
-                  data-heading-id={item.slug}
-                >
-                  {item.text}
-                </a>
-              ))}
-            </nav>
-          </div>
-        </aside>
-      )}
     </div>
 
     <!-- 标签 + 分享按钮 + 评论按钮 -->
@@ -223,10 +202,13 @@ const jsonLd = {
     </section>
   </article>
 
-  <!-- 返回顶部浮动按钮 -->
+  <!-- 移动端浮动按钮（桌面端按钮已融入 TOC 侧边栏） -->
   <div class="float-btn-group">
     <button class="float-btn float-top" id="float-top" aria-label="返回顶部">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+    </button>
+    <button class="float-btn float-comments" id="float-comments" aria-label="跳转评论区">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     </button>
     {toc.length > 0 && (
       <>
@@ -257,6 +239,38 @@ const jsonLd = {
       </>
     )}
   </div>
+
+  {toc.length > 0 && (
+    <Fragment slot="sidebar">
+      <div class="toc" id="toc-sidebar">
+        <h4 class="toc-title">目录</h4>
+        <nav class="toc-nav">
+          {toc.map((item) => (
+            <div class="toc-item-wrapper" data-toc-wrapper={item.slug}>
+              <span class="toc-bar" data-toc-bar={item.slug}></span>
+              <a
+                href={`#${item.slug}`}
+                class:list={['toc-link', `toc-h${item.depth}`]}
+                data-heading-id={item.slug}
+              >
+                {item.text}
+              </a>
+            </div>
+          ))}
+        </nav>
+        <div class="toc-actions">
+          <button class="toc-action-btn" id="toc-back-top" aria-label="返回顶部">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            <span>顶部</span>
+          </button>
+          <button class="toc-action-btn" id="toc-go-comments" aria-label="跳转评论区">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>评论</span>
+          </button>
+        </div>
+      </div>
+    </Fragment>
+  )}
 </BaseLayout>
 
 <style>
@@ -275,6 +289,13 @@ const jsonLd = {
 
   .article-detail {
     color: var(--text-primary);
+  }
+
+  /* 文章元素居中约束在 content-max-width */
+  .article-detail > *:not(.reading-progress) {
+    max-width: var(--content-max-width);
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .article-header {
@@ -352,57 +373,105 @@ const jsonLd = {
     }
   }
 
-  .article-body-wrapper {
-    display: flex;
-    gap: 32px;
-    align-items: flex-start;
-  }
-
   .article-content {
-    flex: 1;
     min-width: 0;
   }
 
-  .toc-sidebar {
-    flex-shrink: 0;
-    width: 240px;
+  /* TOC 在 BaseLayout sidebar 中，sticky 跟随滚动 */
+  .toc {
     position: sticky;
     top: 100px;
     align-self: flex-start;
     max-height: calc(100vh - 120px);
-    overflow-y: auto;
-  }
-
-  .toc {
+    display: flex;
+    flex-direction: column;
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-medium);
-    padding: 18px;
+    padding: 24px;
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+
+    &.toc-visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
 
     .toc-title {
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 16px;
+      font-weight: 600;
       color: var(--text-primary);
-      margin-bottom: 12px;
-      padding-bottom: 8px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
       border-bottom: 1px solid var(--border-primary);
+      flex-shrink: 0;
     }
 
     .toc-nav {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      padding-right: 4px;
+      scroll-behavior: smooth;
+
+      /* 自定义滚动条 */
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: var(--border-primary);
+        border-radius: 2px;
+      }
+      &::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+      }
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-primary) transparent;
+    }
+
+    .toc-item-wrapper {
+      position: relative;
+      display: flow-root;
+    }
+
+    /* 进度条：每个 TOC 项左侧 2px 宽的垂直条，高度随阅读进度填充 */
+    .toc-bar {
+      position: absolute;
+      left: 0;
+      top: 15%;
+      width: 2px;
+      height: 0%;
+      border-radius: 4px;
+      background: transparent;
+      transition: background-color 0.3s ease, height 0.1s linear;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .toc-bar.toc-bar-filled {
+      background: var(--color-primary);
     }
 
     .toc-link {
       display: block;
-      padding: 6px 10px;
-      font-size: 13px;
+      position: relative;
+      padding: 6px 12px;
+      font-size: 14px;
       color: var(--text-tertiary);
       text-decoration: none;
-      border-left: 2px solid transparent;
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      transition: all 0.2s ease;
+      border-radius: var(--radius-sm);
+      transition: color 0.2s ease, background 0.2s ease;
       line-height: 1.5;
 
       &:hover {
@@ -411,33 +480,87 @@ const jsonLd = {
       }
 
       &.toc-h1 {
-        font-weight: 500;
+        font-weight: 600;
         color: var(--text-secondary);
-        font-size: 13px;
+        font-size: 15px;
+        padding-left: 16px;
       }
 
       &.toc-h2 {
-        padding-left: 22px;
-        font-size: 12px;
+        padding-left: 24px;
+        font-size: 14px;
       }
 
       &.toc-h3 {
-        padding-left: 34px;
-        font-size: 12px;
+        padding-left: 32px;
+        font-size: 13px;
         color: var(--text-muted);
       }
 
       &.toc-h4 {
-        padding-left: 46px;
-        font-size: 12px;
+        padding-left: 40px;
+        font-size: 13px;
         color: var(--text-muted);
       }
 
-      &.toc-active {
+      /* 高亮：已读 + 正在读的项 */
+      &.toc-highlight {
         color: var(--color-primary);
-        border-left-color: var(--color-primary);
-        background: color-mix(in srgb, var(--color-primary) 6%, transparent);
         font-weight: 500;
+
+        &.toc-h1 { font-weight: 600; }
+        &.toc-h3, &.toc-h4 { color: color-mix(in srgb, var(--color-primary) 75%, var(--text-muted)); }
+      }
+
+      /* 半透明背景：高亮项的背景色 */
+      &.toc-bg-translucent {
+        background: color-mix(in srgb, var(--color-primary) 9%, transparent);
+      }
+
+      /* 连续高亮项的圆角：首项上圆角，末项下圆角 */
+      &.toc-rounded-top {
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      }
+
+      &.toc-rounded-bottom {
+        border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      }
+
+      /* 唯一高亮项：四角圆角 */
+      &.toc-rounded-single {
+        border-radius: var(--radius-sm);
+      }
+    }
+
+    .toc-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-primary);
+      flex-shrink: 0;
+    }
+
+    .toc-action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 12px;
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-sm);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+      transition: var(--transition);
+
+      &:hover {
+        color: var(--color-primary);
+        border-color: var(--color-primary);
+        background: color-mix(in srgb, var(--color-primary) 4%, transparent);
       }
     }
   }
@@ -607,6 +730,14 @@ const jsonLd = {
       opacity: 1 !important;
       transition: none !important;
     }
+
+    .toc-bar {
+      transition: none !important;
+    }
+
+    .toc-link {
+      transition: none !important;
+    }
   }
 
   /* 上下篇 */
@@ -660,17 +791,16 @@ const jsonLd = {
   .comments-section {
     margin-top: 48px;
     padding-top: 32px;
-    padding-right: 60px;
     border-top: 1px solid var(--border-secondary);
     scroll-margin-top: 80px;
   }
 
-  /* 浮动按钮组（返回顶部，右下角） */
+  /* 浮动按钮组（移动端专用，桌面端按钮已融入 TOC） */
   .float-btn-group {
     position: fixed;
     right: 24px;
     bottom: 48px;
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: 10px;
     z-index: 99;
@@ -707,13 +837,9 @@ const jsonLd = {
     transform: translateY(0);
   }
 
-  /* 移动端 TOC 按钮（默认隐藏，≤1024px 显示） */
-  .float-toc {
-    display: none;
-  }
-
+  /* 移动端：显示浮动按钮组 */
   @media (max-width: 1024px) {
-    .float-toc {
+    .float-btn-group {
       display: flex;
     }
   }
@@ -977,7 +1103,7 @@ const jsonLd = {
   /* 打印样式 */
   @media print {
     .reading-progress,
-    .toc-sidebar,
+    .toc,
     .float-btn-group,
     .toc-overlay,
     .breadcrumb,
@@ -989,16 +1115,13 @@ const jsonLd = {
       display: none !important;
     }
 
-    .article-body-wrapper {
-      display: block !important;
-    }
-
     .article-cover {
       max-height: 300px;
     }
 
     .layout-header,
-    .layout-footer {
+    .layout-footer,
+    :global(#layout-sidebar) {
       display: none !important;
     }
 
@@ -1013,20 +1136,12 @@ const jsonLd = {
   }
 
   @media (max-width: 1024px) {
-    .toc-sidebar {
+    :global(#layout-sidebar) {
       display: none;
-    }
-
-    .comments-section {
-      padding-right: 0;
     }
   }
 
   @media (max-width: 640px) {
-    .article-body-wrapper {
-      flex-direction: column;
-    }
-
     .prev-next {
       grid-template-columns: 1fr;
     }
@@ -1113,8 +1228,9 @@ const jsonLd = {
   }
 </style>
 
-<!-- 文章页脚本：使用 astro:page-load 确保 ClientRouter 导航后可靠执行 -->
-<script is:inline>
+<!-- 文章页脚本：data-astro-rerun 确保每次导航都执行，guard 防止重复注册监听器 -->
+<script is:inline data-astro-rerun>
+(function () {
 // ── 全局 cleanup store ──
 window.__articleState = window.__articleState || {
   scrollFns: [],
@@ -1236,90 +1352,222 @@ function initArticlePage() {
     state.observers.push(obs);
   })();
 
-  // ---- 返回顶部按钮 ----
+  // ---- 返回顶部 + 评论浮动按钮（移动端） ----
   (function () {
     var btn = document.getElementById('float-top');
-    if (!btn) return;
+    var cmtBtn = document.getElementById('float-comments');
     var fn = function () {
       if (window.scrollY > 400) {
-        btn.classList.add('float-visible');
+        if (btn) btn.classList.add('float-visible');
+        if (cmtBtn) cmtBtn.classList.add('float-visible');
       } else {
-        btn.classList.remove('float-visible');
+        if (btn) btn.classList.remove('float-visible');
+        if (cmtBtn) cmtBtn.classList.remove('float-visible');
       }
     };
     state.scrollFns.push(fn);
     window.addEventListener('scroll', fn, { passive: true });
-    btn.addEventListener('click', function () {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    if (btn) {
+      btn.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
   })();
 
-  // ---- TOC 高亮 ----
+  // ---- TOC：封面图滚出后显示，正文结束后隐藏 ----
   (function () {
-    var links = document.querySelectorAll('.toc-link');
-    var headings = Array.from(document.querySelectorAll('#article-body h1, #article-body h2, #article-body h3, #article-body h4'));
-    if (!links.length || !headings.length) return;
+    var toc = document.querySelector('#layout-sidebar .toc');
+    if (!toc) return;
 
-    // 确保标题有 id
-    headings.forEach(function (h) {
-      var slug = (h.textContent || '').toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      if (slug && !h.id) h.id = slug;
+    var cover = document.querySelector('.article-cover');
+    var content = document.querySelector('.article-content');
+
+    if (!content) {
+      toc.classList.add('toc-visible');
+      return;
+    }
+
+    var fn = function () {
+      var isVisible = toc.classList.contains('toc-visible');
+
+      // 封面图底部是否已滚出视口顶部（迟滞防闪烁：已显示时阈值更宽松）
+      var coverOut = true;
+      if (cover) {
+        var coverBottom = cover.getBoundingClientRect().bottom;
+        coverOut = isVisible ? coverBottom < 140 : coverBottom < 80;
+      }
+      // 正文底部是否仍在视口内（迟滞防闪烁：已显示时阈值更宽松）
+      var contentBottom = content.getBoundingClientRect().bottom;
+      var contentVisible = isVisible ? contentBottom > 60 : contentBottom > 120;
+
+      if (coverOut && contentVisible) {
+        toc.classList.add('toc-visible');
+      } else {
+        toc.classList.remove('toc-visible');
+      }
+    };
+    state.scrollFns.push(fn);
+    window.addEventListener('scroll', fn, { passive: true });
+    fn();
+  })();
+
+  // ---- TOC 操作按钮（返回顶部 / 跳转评论） ----
+  (function () {
+    var backTop = document.getElementById('toc-back-top');
+    if (backTop) {
+      backTop.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+    var goComments = document.getElementById('toc-go-comments');
+    if (goComments) {
+      goComments.addEventListener('click', function () {
+        var comments = document.getElementById('comments');
+        if (comments) {
+          comments.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+    // 移动端浮动评论按钮
+    var floatComments = document.getElementById('float-comments');
+    if (floatComments) {
+      floatComments.addEventListener('click', function () {
+        var comments = document.getElementById('comments');
+        if (comments) {
+          comments.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
+  })();
+
+  // ---- TOC 高亮 + 进度条动画（参照 ragnote.top article-toc） ----
+  (function () {
+    var tocNav = document.querySelector('.toc-nav');
+    if (!tocNav) return;
+
+    // clone 替换链接以移除旧监听器
+    Array.from(tocNav.querySelectorAll('.toc-link')).forEach(function (link) {
+      var newLink = link.cloneNode(true);
+      link.parentNode.replaceChild(newLink, link);
     });
+
+    var links = Array.from(tocNav.querySelectorAll('.toc-link'));
+    var bars = Array.from(tocNav.querySelectorAll('.toc-bar'));
+    var wrappers = Array.from(tocNav.querySelectorAll('.toc-item-wrapper'));
+    var articleEl = document.querySelector('.article-content');
+
+    // 通过 TOC 链接的 data-heading-id 精确匹配标题元素（排除 pagefind-index-meta 隐藏标题）
+    var headings = links.map(function (link) {
+      var id = link.getAttribute('data-heading-id');
+      return id ? document.getElementById(id) : null;
+    }).filter(Boolean);
+
+    if (!headings.length) return;
+
+    // 缺失 id 的标题补上
+    headings.forEach(function (h) {
+      if (!h.id) {
+        var slug = (h.textContent || '').toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        if (slug) h.id = slug;
+      }
+    });
+
+    // 缓存 section 位置（resize 时重算）
+    var sections = [];
+    function recalcSections() {
+      sections = headings.map(function (h, i) {
+        var rect = h.getBoundingClientRect();
+        var top = rect.top + window.scrollY;
+        var bottom = i < headings.length - 1
+          ? headings[i + 1].getBoundingClientRect().top + window.scrollY
+          : Infinity;
+        return { id: h.id, top: top, bottom: bottom };
+      });
+    }
+    recalcSections();
+    var resizeFn = function () { recalcSections(); updateTOC(); };
+    state.scrollFns.push(resizeFn);
+    window.addEventListener('resize', resizeFn, { passive: true });
 
     var isProgrammaticScroll = false;
     var scrollEndTimer;
 
-    var obs = new IntersectionObserver(function (entries) {
+    function updateTOC() {
       if (isProgrammaticScroll) return;
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          var id = entry.target.id;
-          links.forEach(function (link) { link.classList.remove('toc-active'); });
-          var active = document.querySelector('.toc-link[data-heading-id="' + id + '"]');
-          if (active) active.classList.add('toc-active');
+
+      var scrollPos = window.scrollY + 120;
+      var articleBottom = articleEl
+        ? articleEl.getBoundingClientRect().top + window.scrollY + articleEl.offsetHeight
+        : Infinity;
+
+      var firstHighlight = -1;
+      var lastHighlight = -1;
+
+      sections.forEach(function (sec, i) {
+        var bar = bars[i];
+        var link = links[i];
+        if (!bar || !link) return;
+
+        var progress = 0;
+        if (scrollPos >= sec.bottom) {
+          progress = 1;
+        } else if (scrollPos >= sec.top) {
+          var range = sec.bottom === Infinity ? articleBottom - sec.top : sec.bottom - sec.top;
+          progress = range > 0 ? Math.min((scrollPos - sec.top) / range, 1) : 0;
+        }
+
+        bar.style.height = (progress * 70) + '%';
+
+        if (progress > 0) {
+          bar.classList.add('toc-bar-filled');
+          link.classList.add('toc-highlight', 'toc-bg-translucent');
+          if (firstHighlight === -1) firstHighlight = i;
+          lastHighlight = i;
+        } else {
+          bar.classList.remove('toc-bar-filled');
+          link.classList.remove('toc-highlight', 'toc-bg-translucent');
         }
       });
-    }, { rootMargin: '-80px 0px -60% 0px' });
 
-    headings.forEach(function (h) { obs.observe(h); });
-    state.observers.push(obs);
-
-    // TOC 自动滚动到当前高亮项（目录很长时当前项可能滚出视野）
-    var tocNav = document.querySelector('.toc-nav');
-    if (tocNav) {
-      var scrollToc = function () {
-        var active = tocNav.querySelector('.toc-active');
-        if (!active) return;
-        var navRect = tocNav.getBoundingClientRect();
-        var activeRect = active.getBoundingClientRect();
-        if (activeRect.top < navRect.top || activeRect.bottom > navRect.bottom) {
-          tocNav.scrollTo({
-            top: active.offsetTop - tocNav.clientHeight / 2 + active.clientHeight / 2,
-            behavior: 'smooth',
-          });
+      // 圆角：首项上圆角 / 末项下圆角 / 唯一项全圆角
+      links.forEach(function (link, i) {
+        link.classList.remove('toc-rounded-top', 'toc-rounded-bottom', 'toc-rounded-single');
+        if (firstHighlight === -1) return;
+        if (firstHighlight === lastHighlight && i === firstHighlight) {
+          link.classList.add('toc-rounded-single');
+        } else if (i === firstHighlight) {
+          link.classList.add('toc-rounded-top');
+        } else if (i === lastHighlight) {
+          link.classList.add('toc-rounded-bottom');
         }
-      };
-      // 监听 TOC 高亮变化
-      var tocObserver = new MutationObserver(function () { scrollToc(); });
-      tocObserver.observe(tocNav, { subtree: true, attributes: true, attributeFilter: ['class'] });
-      state.observers.push({ disconnect: function () { tocObserver.disconnect(); } });
+      });
+
+      // 自动滚动 TOC 到当前高亮项
+      if (lastHighlight >= 0) {
+        var activeWrapper = wrappers[lastHighlight];
+        if (activeWrapper) {
+          var navRect = tocNav.getBoundingClientRect();
+          var activeRect = activeWrapper.getBoundingClientRect();
+          if (activeRect.top < navRect.top || activeRect.bottom > navRect.bottom) {
+            var relativeTop = activeRect.top - navRect.top + tocNav.scrollTop;
+            tocNav.scrollTo({
+              top: relativeTop - tocNav.clientHeight / 2 + activeWrapper.clientHeight / 2,
+              behavior: 'smooth',
+            });
+          }
+        }
+      }
     }
 
-    // TOC 点击
+    // 点击 TOC 项平滑滚动
     links.forEach(function (link) {
-      var newLink = link.cloneNode(true);
-      link.parentNode.replaceChild(newLink, link);
-      newLink.addEventListener('click', function (e) {
-        var id = newLink.getAttribute('href');
+      link.addEventListener('click', function (e) {
+        var id = link.getAttribute('href');
         if (!id) return;
         id = id.slice(1);
         var target = document.getElementById(id);
         if (!target) return;
         e.preventDefault();
-
-        var activeLink = document.querySelector('.toc-link.toc-active');
-        if (activeLink) activeLink.classList.remove('toc-active');
-        newLink.classList.add('toc-active');
 
         var posDelta = Math.abs(target.getBoundingClientRect().top);
         var offset = posDelta > 50 ? 24 : 80;
@@ -1331,11 +1579,16 @@ function initArticlePage() {
         });
 
         clearTimeout(scrollEndTimer);
-        var reset = function () { isProgrammaticScroll = false; };
+        var reset = function () { isProgrammaticScroll = false; updateTOC(); };
         window.addEventListener('scrollend', reset, { once: true });
         scrollEndTimer = window.setTimeout(reset, 900);
       });
     });
+
+    var fn = function () { updateTOC(); };
+    state.scrollFns.push(fn);
+    window.addEventListener('scroll', fn, { passive: true });
+    updateTOC();
   })();
 
   // ---- 代码块复制 + 语言标签 ----
@@ -1465,9 +1718,17 @@ function initArticlePage() {
   })();
 }
 
-// ── astro:page-load：每次导航（含首次）后触发 ──
-document.addEventListener('astro:page-load', function () {
-  cleanupArticle();
-  initArticlePage();
-});
+// ── 注册 astro:page-load 监听器只执行一次 ──
+if (!window.__articleSetup) {
+  window.__articleSetup = true;
+  document.addEventListener('astro:page-load', function () {
+    cleanupArticle();
+    initArticlePage();
+  });
+}
+
+// 每次脚本执行时直接尝试初始化（覆盖 astro:page-load 已触发的竞态）
+cleanupArticle();
+initArticlePage();
+})();
 </script>

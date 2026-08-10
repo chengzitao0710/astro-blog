@@ -19,14 +19,8 @@ const isConfigured = g.repo && g.repoId && g.categoryId;
       data-input-position={g.inputPosition}
       data-lang={g.lang}
     ></span>
-    <script is:inline>
+    <script is:inline data-astro-rerun>
       (function () {
-        if (window.__giscusSetup) return;
-        window.__giscusSetup = true;
-
-        // 跟踪 Giscus iframe 是否已完全就绪（能接收 postMessage）
-        var giscusReady = false;
-
         function currentTheme() {
           return document.documentElement.getAttribute('data-theme') === 'dark'
             ? 'dark' : 'light';
@@ -48,10 +42,9 @@ const isConfigured = g.repo && g.repoId && g.categoryId;
           var cfg = document.getElementById('giscus-cfg');
           if (!cfg) return;
 
-          giscusReady = false;
+          window.__giscusReady = false;
 
           // 清理所有 Giscus 残留（.giscus 容器 + script 标签）
-          // 用 querySelectorAll 而非 querySelector，防止竞态产生多个残留
           document.querySelectorAll('.giscus').forEach(function(d) { d.remove(); });
           document.querySelectorAll('script[src*="giscus.app/client.js"]').forEach(function(s) { s.remove(); });
 
@@ -74,12 +67,11 @@ const isConfigured = g.repo && g.repoId && g.categoryId;
           cfg.parentNode.insertBefore(s, cfg.nextSibling);
 
           // 加载后持续同步主题（每 500ms，最多 3 秒）
-          // 覆盖：iframe 在 theme-change 之后才创建完毕的场景
           var syncCount = 0;
           var syncInterval = setInterval(function () {
-            if (giscusReady || syncCount >= 6) {
+            if (window.__giscusReady || syncCount >= 6) {
               clearInterval(syncInterval);
-              if (giscusReady) postTheme();
+              if (window.__giscusReady) postTheme();
               return;
             }
             postTheme();
@@ -87,37 +79,46 @@ const isConfigured = g.repo && g.repoId && g.categoryId;
           }, 500);
         }
 
-        // 每次页面导航（含首次）后加载 Giscus
-        document.addEventListener('astro:page-load', loadGiscus);
+        // 注册监听器只执行一次（data-astro-rerun 会导致脚本每次导航都执行）
+        if (!window.__giscusSetup) {
+          window.__giscusSetup = true;
 
-        // 主题切换：就绪 → postMessage 即时同步；未就绪 → 重建脚本用正确主题
-        window.addEventListener('theme-change', function () {
-          if (giscusReady) {
-            postTheme();
-          } else {
-            loadGiscus();
-          }
-        });
+          // 每次页面导航后加载 Giscus
+          document.addEventListener('astro:page-load', loadGiscus);
 
-        // 跟踪 Giscus 就绪状态 + 就绪时同步主题
-        window.addEventListener('message', function (e) {
-          if (e.origin !== 'https://giscus.app') return;
-          var data = e.data;
-          if (typeof data === 'string') {
-            try { data = JSON.parse(data); } catch (_) { return; }
-          }
-          if (data && data.giscus) {
-            if (data.giscus.ready) {
-              giscusReady = true;
+          // 主题切换：就绪 → postMessage 即时同步；未就绪 → 重建脚本
+          window.addEventListener('theme-change', function () {
+            if (window.__giscusReady) {
               postTheme();
-              setTimeout(postTheme, 100);
-              setTimeout(postTheme, 300);
+            } else {
+              loadGiscus();
             }
-            if (data.giscus.discussion) {
-              giscusReady = true;
+          });
+
+          // 跟踪 Giscus 就绪状态 + 就绪时同步主题
+          window.addEventListener('message', function (e) {
+            if (e.origin !== 'https://giscus.app') return;
+            var data = e.data;
+            if (typeof data === 'string') {
+              try { data = JSON.parse(data); } catch (_) { return; }
             }
-          }
-        });
+            if (data && data.giscus) {
+              if (data.giscus.ready) {
+                window.__giscusReady = true;
+                postTheme();
+                setTimeout(postTheme, 100);
+                setTimeout(postTheme, 300);
+              }
+              if (data.giscus.discussion) {
+                window.__giscusReady = true;
+              }
+            }
+          });
+        }
+
+        // 每次脚本执行时直接尝试加载 Giscus
+        // 覆盖：astro:page-load 已在监听器注册前触发的竞态场景
+        loadGiscus();
       })();
     </script>
   </>
