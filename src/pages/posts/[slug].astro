@@ -138,10 +138,6 @@ const jsonLd = {
           <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           Twitter
         </button>
-        <a href="#comments" class="tag-chip comment-chip" aria-label="评论">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          评论
-        </a>
       </div>
     </div>
 
@@ -982,13 +978,6 @@ const jsonLd = {
     }
   }
 
-  /* 评论按钮（标签栏末尾） */
-  .comment-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-
   /* 面包屑导航 */
   .breadcrumb {
     display: flex;
@@ -1352,21 +1341,65 @@ function initArticlePage() {
     state.observers.push(obs);
   })();
 
-  // ---- 返回顶部 + 评论浮动按钮（移动端） ----
+  // ---- 返回顶部 + 评论 + 目录浮动按钮（移动端，滚动时出现，停止滚动后收起） ----
+  // 注意：float-toc 按钮会被 TOC 抽屉代码 clone-replace，所以每次 scroll 时重新查询
   (function () {
     var btn = document.getElementById('float-top');
     var cmtBtn = document.getElementById('float-comments');
+    var group = document.querySelector('.float-btn-group');
+    var hideTimer = null;
+    var isInteracting = false;
+    var IDLE_DELAY = 1000; // 停止滚动 1s 后收起
+
+    function showButtons() {
+      var tocBtn = document.getElementById('float-toc');
+      if (btn) btn.classList.add('float-visible');
+      if (cmtBtn) cmtBtn.classList.add('float-visible');
+      if (tocBtn) tocBtn.classList.add('float-visible');
+    }
+
+    function hideButtons() {
+      var tocBtn = document.getElementById('float-toc');
+      if (btn) btn.classList.remove('float-visible');
+      if (cmtBtn) cmtBtn.classList.remove('float-visible');
+      if (tocBtn) tocBtn.classList.remove('float-visible');
+    }
+
     var fn = function () {
-      if (window.scrollY > 400) {
-        if (btn) btn.classList.add('float-visible');
-        if (cmtBtn) cmtBtn.classList.add('float-visible');
-      } else {
-        if (btn) btn.classList.remove('float-visible');
-        if (cmtBtn) cmtBtn.classList.remove('float-visible');
+      // 页面顶部：始终隐藏
+      if (window.scrollY <= 400) {
+        clearTimeout(hideTimer);
+        hideButtons();
+        return;
       }
+      // 滚动中：显示按钮，并重置收起计时器
+      showButtons();
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(function () {
+        if (!isInteracting) hideButtons();
+      }, IDLE_DELAY);
     };
+
     state.scrollFns.push(fn);
     window.addEventListener('scroll', fn, { passive: true });
+
+    // 用户与按钮交互时：保持显示，不收起
+    if (group) {
+      var startInteract = function () {
+        isInteracting = true;
+        clearTimeout(hideTimer);
+      };
+      var endInteract = function () {
+        isInteracting = false;
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(hideButtons, IDLE_DELAY);
+      };
+      group.addEventListener('mouseenter', startInteract);
+      group.addEventListener('mouseleave', endInteract);
+      group.addEventListener('touchstart', startInteract, { passive: true });
+      group.addEventListener('touchend', endInteract, { passive: true });
+    }
+
     if (btn) {
       btn.addEventListener('click', function () {
         window.scrollTo({ top: 0, behavior: 'smooth' });
