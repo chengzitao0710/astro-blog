@@ -145,7 +145,7 @@ const aboutIntro = (() => {
   </div>
 </BaseLayout>
 
-<style>
+<style is:global>
   .intro-home {
     max-width: 100%;
     margin: 0 auto;
@@ -468,20 +468,123 @@ const aboutIntro = (() => {
       width: auto;
     }
 
-    .feed-list .feed-item .feed-date {
-      width: 72px;
-      font-size: 12px;
+    /* Hero 徽章改用 grid 强制 3 列换行 */
+    .profile-hero {
+      padding: 20px 16px 28px !important;
     }
 
-    /* 窄屏时间线缩进减小 */
+    .profile-hero .hero-badges {
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 10px 8px !important;
+      justify-items: center !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+    }
+
+    .profile-hero .hero-badges .badge-item {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 4px !important;
+      width: 100% !important;
+      min-width: 0 !important;
+      padding: 6px 2px !important;
+      font-size: 12px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+
+    /* Feed 列表改为日期+标题两行布局 */
     .feed-list {
-      padding-left: 10px;
+      padding-left: 0 !important;
     }
 
+    .feed-list::before,
     .feed-list .feed-item::before {
-      left: -15px;
-      width: 6px;
-      height: 6px;
+      display: none !important;
+    }
+
+    .feed-list .feed-item {
+      display: block !important;
+      padding: 12px 0 !important;
+      border-bottom: 1px solid var(--border-secondary) !important;
+    }
+
+    .feed-list .feed-item .feed-date {
+      display: block !important;
+      width: auto !important;
+      margin-bottom: 4px !important;
+      font-size: 11px !important;
+      color: var(--text-tertiary) !important;
+    }
+
+    .feed-list .feed-item .feed-title {
+      display: inline !important;
+      font-size: 14px !important;
+      vertical-align: middle !important;
+    }
+
+    .feed-list .feed-item .feed-pin,
+    .feed-list .feed-item .feed-time {
+      display: inline-flex !important;
+      margin-left: 6px !important;
+      vertical-align: middle !important;
+    }
+
+    .feed-list .feed-item .feed-pin {
+      font-size: 10px !important;
+      padding: 1px 6px !important;
+    }
+
+    .feed-list .feed-item .feed-time {
+      font-size: 10px !important;
+    }
+
+    .feed-list .feed-item .feed-chevron {
+      display: none !important;
+    }
+  }
+
+  /* iPhone SE 等超窄屏（更紧凑） */
+  @media (max-width: 375px) {
+    .profile-hero {
+      padding: 16px 10px 24px !important;
+    }
+
+    .profile-hero .hero-avatar {
+      width: 72px !important;
+      height: 72px !important;
+      font-size: 26px !important;
+      margin-bottom: 12px !important;
+    }
+
+    .profile-hero .hero-name {
+      font-size: 22px !important;
+    }
+
+    .intro-home .home-content .content-section {
+      padding: 22px 0 !important;
+      gap: 10px !important;
+    }
+
+    .intro-home .home-content .section-label {
+      font-size: 12px !important;
+    }
+
+    .intro-home .home-content .section-body .about-text {
+      font-size: 13px !important;
+      line-height: 1.6 !important;
+    }
+
+    .intro-home .chip-list {
+      gap: 6px !important;
+    }
+
+    .intro-home .chip-list .chip {
+      padding: 4px 10px !important;
+      font-size: 12px !important;
     }
   }
 </style>

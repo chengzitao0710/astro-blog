@@ -383,4 +383,43 @@ const navItems = [
       width: 110px;
     }
   }
+
+  /* iPhone SE 等超窄屏（≤375px） */
+  @media (max-width: 375px) {
+    .layout-header {
+      padding: 0 10px;
+    }
+
+    .header-pill {
+      gap: 6px;
+      padding: 5px 8px 5px 10px;
+      border-radius: 12px;
+    }
+
+    .brand .brand-badge {
+      width: 26px;
+      height: 26px;
+    }
+
+    .header-actions {
+      gap: 4px;
+    }
+
+    .header-actions .search-input {
+      width: 80px;
+      height: 30px;
+      padding: 0 10px;
+      font-size: 13px;
+    }
+
+    .mobile-menu-btn {
+      width: 30px;
+      height: 30px;
+    }
+
+    .theme-toggle {
+      width: 30px;
+      height: 30px;
+    }
+  }
 </style>

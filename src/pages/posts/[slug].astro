@@ -1045,6 +1045,72 @@ const jsonLd = {
       flex-wrap: wrap;
     }
   }
+
+  /* iPhone SE 等超窄屏 */
+  @media (max-width: 375px) {
+    .article-header {
+      padding: 0 0 20px;
+    }
+
+    .article-title {
+      font-size: 1.5em;
+    }
+
+    .article-summary {
+      font-size: 14px;
+    }
+
+    .article-meta {
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .article-meta .category-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+    }
+
+    .article-meta .reading-time {
+      font-size: 12px;
+    }
+
+    .article-cover {
+      aspect-ratio: 16 / 9;
+      margin-bottom: 20px;
+      border-radius: var(--radius);
+    }
+
+    .signature-card {
+      margin-top: 32px;
+      padding: 24px 16px;
+    }
+
+    .signature-svg {
+      width: 100%;
+      max-width: 220px;
+      height: auto;
+    }
+
+    .float-btn-group {
+      right: 14px;
+      bottom: 32px;
+    }
+
+    .float-btn {
+      width: 38px;
+      height: 38px;
+    }
+
+    .markdown-body {
+      font-size: 15px;
+    }
+
+    .markdown-body pre,
+    .markdown-body .astro-code {
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+  }
 </style>
 
 <!-- 文章页脚本：使用 astro:page-load 确保 ClientRouter 导航后可靠执行 -->

@@ -340,6 +340,26 @@ const ogImage = image || siteConfig.ogDefaultImage || siteConfig.authorAvatar;
         .layout-main .sidebar {
           width: 100%;
         }
+
+        .layout-footer .footer-inner {
+          padding: 20px 16px;
+        }
+      }
+
+      /* iPhone SE 等超窄屏 */
+      @media (max-width: 375px) {
+        .layout-main {
+          padding-top: 72px;
+        }
+
+        .layout-main .main-inner {
+          padding: 16px 12px;
+        }
+
+        .layout-footer .footer-inner {
+          padding: 16px 12px;
+          font-size: 12px;
+        }
       }
     </style>
 

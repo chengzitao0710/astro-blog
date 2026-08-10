@@ -157,6 +157,31 @@ const siteInitial = (siteConfig.siteName || 'B').charAt(0).toUpperCase();
     flex: 1;
   }
 
+  @media (max-width: 375px) {
+    .card-body {
+      padding: 14px 14px 16px;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-size: 15px;
+    }
+
+    .card-summary {
+      font-size: 12px;
+    }
+
+    .card-meta {
+      gap: 4px;
+      font-size: 11px;
+    }
+
+    .card-meta .meta-category {
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+  }
+
   .card-meta {
     display: flex;
     align-items: center;

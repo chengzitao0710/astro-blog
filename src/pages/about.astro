@@ -442,6 +442,39 @@ const socialLinks = siteConfig.socialLinks;
     text-align: center;
     font-size: 15px;
   }
+
+  /* iPhone SE 等超窄屏 */
+  @media (max-width: 375px) {
+    .about-hero {
+      padding: 16px 0 28px;
+    }
+
+    .about-hero .hero-avatar-wrap {
+      width: 80px;
+      height: 80px;
+    }
+
+    .about-hero .hero-avatar-fallback {
+      font-size: 30px;
+    }
+
+    .about-hero .hero-name {
+      font-size: 24px;
+    }
+
+    .about-hero .hero-tagline {
+      font-size: 14px;
+    }
+
+    .about-quote {
+      padding: 14px 16px;
+      font-size: 14px;
+    }
+
+    .contact-cards {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 
 <!-- 入场动画脚本：astro:page-load 确保 View Transitions 导航后重新执行 -->
