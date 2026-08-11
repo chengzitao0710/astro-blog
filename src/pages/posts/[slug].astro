@@ -1658,6 +1658,55 @@ function initArticlePage() {
     });
   })();
 
+  // ---- 表格包裹 + 横向滚动提示 ----
+  (function () {
+    var tables = document.querySelectorAll('.markdown-body table');
+    if (!tables.length) return;
+
+    var wrappers = [];
+
+    tables.forEach(function (table) {
+      // 跳过已被包裹的表格
+      if (table.parentElement && table.parentElement.classList.contains('table-scroll')) return;
+
+      var wrapper = document.createElement('div');
+      wrapper.className = 'table-scroll';
+      table.parentNode.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+      wrappers.push(wrapper);
+    });
+
+    if (!wrappers.length) return;
+
+    function updateScrollHint() {
+      wrappers.forEach(function (wrapper) {
+        var canScroll = wrapper.scrollWidth > wrapper.clientWidth + 2;
+        wrapper.classList.toggle('can-scroll', canScroll);
+
+        if (canScroll) {
+          var atStart = wrapper.scrollLeft <= 2;
+          var atEnd = wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 2;
+          wrapper.classList.toggle('scrolled-start', !atStart);
+          wrapper.classList.toggle('scrolled-end', atEnd);
+        } else {
+          wrapper.classList.remove('scrolled-start', 'scrolled-end');
+        }
+      });
+    }
+
+    // 监听滚动
+    wrappers.forEach(function (wrapper) {
+      wrapper.addEventListener('scroll', updateScrollHint, { passive: true });
+    });
+
+    // 监听窗口大小变化
+    var resizeFn = updateScrollHint;
+    state.scrollFns.push(resizeFn);
+    window.addEventListener('resize', resizeFn, { passive: true });
+
+    updateScrollHint();
+  })();
+
   // ---- 社交分享按钮 ----
   (function () {
     var shareBtns = document.querySelectorAll('.share-chip');
